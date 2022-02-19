@@ -11,6 +11,8 @@ namespace Custom_Text_Encoder
 {
     internal class Program
     {
+        static string codecPath = "";
+        static bool isCodecLoaded;
         static void WriteWithColor<T>(T value, ConsoleColor color, bool endLine = false)
         {
             ConsoleColor oldColor = Console.ForegroundColor;
@@ -31,19 +33,19 @@ namespace Custom_Text_Encoder
             foreach (char c in "\\/:*\"?<>|") { text = text.Replace(c.ToString(), null); }
             return text;
         }
+
         static bool CheckCodec(string filePath)
         {
             Console.Write("Codec status: ");
             if (File.Exists(filePath))
             {
-                string fileContents = File.ReadAllText(filePath);
-                if (fileContents.StartsWith("{") && fileContents.EndsWith("}"))
-                {
-                    WriteWithColor("Loaded", ConsoleColor.Green, true);
-                    return true;
-                }
+                WriteWithColor("Loaded", ConsoleColor.Green);
+                Console.Write("(");
+                WriteWithColor(filePath.Remove(filePath.Length - 5, 5), ConsoleColor.DarkCyan);
+                Console.WriteLine(")\n");
+                return true;
             }
-            WriteWithColor("Not Loaded", ConsoleColor.Red, true);
+            WriteWithColor("Not Loaded\n", ConsoleColor.Red, true);
             return false;
         }
 
@@ -88,27 +90,70 @@ namespace Custom_Text_Encoder
             do
             {
                 Console.Clear();
-                string codecPath = "";
-                bool isCodecLoaded = CheckCodec(codecPath);
-                Console.Write($"Select Mode:\n1. Encode\n2. Decode\n3. Load Encoding Format\n4. Create Encoding Format\n5. Modify Encoding Format\nChoose an option: ");
+                isCodecLoaded = CheckCodec(codecPath);
+                Console.Write($"Select Mode\n1. Encode\n2. Decode\n3. Load Encoding Format\n4. Create Encoding Format\n5. Modify Encoding Format\n6. Export Codec\n7. Import Codec\n8. Delete Codec\n\nChoose an option: ");
                 int.TryParse(Console.ReadLine(), out result);
                 Console.Clear();
                 switch (result)
                 {
-                    case -1: //DEBUG
-                        Console.ReadLine();
-                        break;
+                    #region "TODO"
                     case 1:
                         if (!isCodecLoaded)
                         {
-                            Console.Write("Choose an encoding format before!\n\nType 0 to create a new encoding format or press enter to restart the program: ");
-                            if (Console.ReadLine() == "0") { Console.Clear(); goto case 4; }
-                            else result = 0;
+                            Console.Write("Choose an encoding format before!\n\nType 0 to create a new encoding format, Type 1 to load an existing codec or press enter to restart the program: ");
+                            string reply = Console.ReadLine();
+                            if (reply == "0") { goto case 4; } else if (reply == "1") { goto case 3; } else result = 0;
                         }
                         break;
-                    case 2: break;
-                    case 3: break;
+                    case 2:
+                        if (!isCodecLoaded)
+                        {
+                            Console.Write("Choose an encoding format before!\n\nType 0 to create a new encoding format, Type 1 to load an existing codec or press enter to restart the program: ");
+                            string reply = Console.ReadLine();
+                            if (reply == "0") { goto case 4; } else if (reply == "1") { goto case 3; } else result = 0;
+                        }
+                        break;
+                    #endregion
+                    #region "Load Codec"
+                    case 3:
+                        List<string> codecs = new List<string>();
+
+                        foreach (string filePath in Directory.GetFiles(Environment.CurrentDirectory))
+                        {
+                            string fileName = filePath.Replace(Environment.CurrentDirectory, null).Remove(0, 1);
+                            if (fileName.EndsWith(".json"))
+                            {
+                                string fileContents = File.ReadAllText(filePath);
+                                if (fileContents.StartsWith("{") && fileContents.EndsWith("}"))
+                                {
+                                    codecs.Add(fileName);
+                                }
+                            }
+                        }
+
+                        if (codecs.Count > 0)
+                        {
+                            int codecNumber;
+                            do
+                            {
+                                Console.Clear();
+                                Console.WriteLine("Select a codec: ");
+                                for (int i = 1; i <= codecs.Count; i++)
+                                {
+                                    Console.WriteLine($"{i}. {codecs[i - 1].Remove(codecs[i - 1].Length - 5, 5)}"); //remove .json extension
+                                }
+                                Console.Write("Choose: ");
+                                int.TryParse(Console.ReadLine(), out codecNumber);
+                            } while (codecNumber <= 0 || codecNumber > codecs.Count);
+                            codecPath = codecs[codecNumber - 1];
+                            result = 0;
+                        }
+
+                        break;
+                    #endregion
+                    #region "Create codec"
                     case 4:
+                        Console.Clear();
                         Console.Write("Hi, to create a new encoding format you need to follow these rules:\nThe text format must be the following: ");
                         WriteWithColor('X', ConsoleColor.Yellow);
                         Console.Write('-');
@@ -122,7 +167,7 @@ namespace Custom_Text_Encoder
                         Console.Write(" to abort or ");
                         WriteWithColor("SAVE", ConsoleColor.Green);
                         Console.WriteLine(" to save");
-                        Console.WriteLine("You can write multiple entries in two ways:\n 1. Separated by a comma(Ex: A-z, L-Q, 0-ADA, 3-0x03)\n 2. By writing one at time, Ex:\nA-z\nL-Q\n0-ADA\n3-0x03\nIllegal characters: \',-");
+                        Console.WriteLine("You can write multiple entries in two ways:\n 1. Separated by a comma(Ex: A-z, L-Q, 0-ADA, 3-0x03)\n 2. By writing one at time, Ex:\nA-z\nL-Q\n0-ADA\n3-0x03\n\nIllegal characters are \',-");
                         Console.Write("Write Here, press enter for a new line: ");
                         string line;
                         List<string> chars = new List<string>();
@@ -179,10 +224,22 @@ namespace Custom_Text_Encoder
                             }
                             Console.Write("Insert filename: ");
                             string filePath = RemoveIllegalChar(Console.ReadLine());
-                            CreateJSONCodec(filePath.EndsWith(".json") ? filePath : filePath + ".json", chars, encodedChars);
+
+                            if (!filePath.EndsWith(".json")) filePath += ".json";
+                            if (File.Exists(filePath))
+                            {
+                                Console.Write($"File {filePath.Replace(Environment.CurrentDirectory, null).Replace(".json",null)} already exists. Do you want to overwrite it? (Y/N): ");
+                                if (Console.ReadLine().ToUpper() == "N") goto skipFile;
+                            }
+                            CreateJSONCodec(filePath, chars, encodedChars);
+                            Console.Write("\nFile saved successfully, do you want to load it? (Y/N): ");
+                            if (Console.ReadLine().ToUpper() == "Y") codecPath = filePath;
+skipFile:
+                            result = 0;
                         }
                         break;
-                    case 5: break;
+                    #endregion
+                    default: result = 0; break;
                 }
             } while (result == 0);
 #if DEBUG
