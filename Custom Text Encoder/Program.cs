@@ -84,6 +84,45 @@ namespace Custom_Text_Encoder
 
         }
 
+        static string ChooseCodec()
+        {
+            List<string> codecs = new List<string>();
+            foreach (string filePath in Directory.GetFiles(Environment.CurrentDirectory))
+            {
+                string fileName = filePath.Replace(Environment.CurrentDirectory, null).Remove(0, 1);
+                if (fileName.EndsWith(".json"))
+                {
+                    string fileContents = File.ReadAllText(filePath);
+                    if (fileContents.StartsWith("{") && fileContents.EndsWith("}"))
+                    {
+                        codecs.Add(fileName);
+                    }
+                }
+            }
+
+            if (codecs.Count > 0)
+            {
+                int codecNumber;
+                do
+                {
+                    Console.Clear();
+                    Console.WriteLine("Select a codec: ");
+                    for (int i = 1; i <= codecs.Count; i++)
+                    {
+                        Console.WriteLine($"{i}. {codecs[i - 1].Remove(codecs[i - 1].Length - 5, 5)}"); //remove .json extension
+                    }
+                    Console.Write("Choose or type ");
+                    WriteWithColor("ABORT", ConsoleColor.DarkRed);
+                    Console.Write(": ");
+                    string reply = Console.ReadLine();
+                    if (reply == "ABORT") goto Exit;
+                    int.TryParse(reply, out codecNumber);
+                } while (codecNumber <= 0 || codecNumber > codecs.Count);
+                return codecs[codecNumber - 1];
+            }
+Exit:
+            return string.Empty;
+        }
         static void Main()
         {
             int result;
@@ -98,13 +137,6 @@ namespace Custom_Text_Encoder
                 {
                     #region "TODO"
                     case 1:
-                        if (!isCodecLoaded)
-                        {
-                            Console.Write("Choose an encoding format before!\n\nType 0 to create a new encoding format, Type 1 to load an existing codec or press enter to restart the program: ");
-                            string reply = Console.ReadLine();
-                            if (reply == "0") { goto case 4; } else if (reply == "1") { goto case 3; } else result = 0;
-                        }
-                        break;
                     case 2:
                         if (!isCodecLoaded)
                         {
@@ -112,43 +144,12 @@ namespace Custom_Text_Encoder
                             string reply = Console.ReadLine();
                             if (reply == "0") { goto case 4; } else if (reply == "1") { goto case 3; } else result = 0;
                         }
-                        break;
+                        throw new NotImplementedException();
                     #endregion
                     #region "Load Codec"
                     case 3:
-                        List<string> codecs = new List<string>();
-
-                        foreach (string filePath in Directory.GetFiles(Environment.CurrentDirectory))
-                        {
-                            string fileName = filePath.Replace(Environment.CurrentDirectory, null).Remove(0, 1);
-                            if (fileName.EndsWith(".json"))
-                            {
-                                string fileContents = File.ReadAllText(filePath);
-                                if (fileContents.StartsWith("{") && fileContents.EndsWith("}"))
-                                {
-                                    codecs.Add(fileName);
-                                }
-                            }
-                        }
-
-                        if (codecs.Count > 0)
-                        {
-                            int codecNumber;
-                            do
-                            {
-                                Console.Clear();
-                                Console.WriteLine("Select a codec: ");
-                                for (int i = 1; i <= codecs.Count; i++)
-                                {
-                                    Console.WriteLine($"{i}. {codecs[i - 1].Remove(codecs[i - 1].Length - 5, 5)}"); //remove .json extension
-                                }
-                                Console.Write("Choose: ");
-                                int.TryParse(Console.ReadLine(), out codecNumber);
-                            } while (codecNumber <= 0 || codecNumber > codecs.Count);
-                            codecPath = codecs[codecNumber - 1];
-                            result = 0;
-                        }
-
+                        codecPath = ChooseCodec();
+                        result = 0;
                         break;
                     #endregion
                     #region "Create codec"
@@ -228,17 +229,35 @@ namespace Custom_Text_Encoder
                             if (!filePath.EndsWith(".json")) filePath += ".json";
                             if (File.Exists(filePath))
                             {
-                                Console.Write($"File {filePath.Replace(Environment.CurrentDirectory, null).Replace(".json",null)} already exists. Do you want to overwrite it? (Y/N): ");
+                                Console.Write($"File {filePath.Replace(Environment.CurrentDirectory, null).Replace(".json", null)} already exists. Do you want to overwrite it? (Y/N): ");
                                 if (Console.ReadLine().ToUpper() == "N") goto skipFile;
                             }
                             CreateJSONCodec(filePath, chars, encodedChars);
                             Console.Write("\nFile saved successfully, do you want to load it? (Y/N): ");
                             if (Console.ReadLine().ToUpper() == "Y") codecPath = filePath;
-skipFile:
-                            result = 0;
                         }
+skipFile:
+                        result = 0;
                         break;
                     #endregion
+                    case 8:
+                        for (int i = 0; i < Console.WindowWidth / 2 - 4; i++)
+                        {
+                            Console.Write(' ');
+                        }
+                        WriteWithColor("WARNING!", ConsoleColor.DarkRed, true);
+                        WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 44}}}", "If you choose to delete a Codec, unless you have a backup, you will permanently lost it!"), ConsoleColor.Red,true);
+                        WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 43}}}","There is no confirmation for deleting files, so choose wisely. if you understood, then"), ConsoleColor.Red, true);
+                        for (int i = 0; i < Console.WindowWidth / 2 - 12; i++)
+                        {
+                            Console.Write(' ');
+                        }
+                        WriteWithColor("Press a key to continue...", ConsoleColor.DarkMagenta, true);
+                        Console.ReadKey();
+                        string codec = ChooseCodec();
+                        if (codec != string.Empty) File.Delete(codec);
+                        result = 0;
+                        break;
                     default: result = 0; break;
                 }
             } while (result == 0);
