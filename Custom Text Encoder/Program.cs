@@ -66,8 +66,14 @@ namespace Custom_Text_Encoder
             return text;
         }
 
-        static void CreateJSONCodec(string filePath, List<char> chars, List<string> encodedChars)
+        static void CreateJSONCodec(string filePath, List<string> chars, List<string> encodedChars)
         {
+            JSONNode file = new JSONObject();
+            for (int i = 0; i < chars.Count; i++)
+            {
+                file.Add(chars[i], encodedChars[i]);
+            }
+            File.WriteAllText(filePath, file.AsObject.ToString(0)); //Questo ToString() non è quello di Microsoft, è una funzione stessa della libreria EasyJSON, il numero indica se usare la formattazione(mantenere gli spazi)
 
         }
 
@@ -101,21 +107,25 @@ namespace Custom_Text_Encoder
                         Console.Write("Hi, to create a new encoding format you need to follow these rules:\nThe text format must be the following: ");
                         WriteWithColor('X', ConsoleColor.Yellow);
                         Console.Write('-');
-                        WriteWithColor("YYY", ConsoleColor.Green);
+                        WriteWithColor("YYY", ConsoleColor.DarkGreen);
                         Console.Write(" where\n - ");
                         WriteWithColor('X', ConsoleColor.Yellow);
                         Console.Write(" is the character that you want to encode\n - ");
                         WriteWithColor('Y', ConsoleColor.Green);
                         Console.Write(" is the encoded form of that character\nFor example if i want to encode all \"A\" to become \"z\", I'll write A-z\nThe program will accept input until you write ");
-                        WriteWithColor("STOP", ConsoleColor.Red, true);
+                        WriteWithColor("STOP", ConsoleColor.Red);
+                        Console.Write(" to abort or ");
+                        WriteWithColor("SAVE", ConsoleColor.Green);
+                        Console.WriteLine(" to save");
                         Console.WriteLine("You can write multiple entries in two ways:\n 1. Separated by a comma(Ex: A-z, L-Q, 0-ADA, 3-0x03)\n 2. By writing one at time, Ex:\nA-z\nL-Q\n0-ADA\n3-0x03\nIllegal characters: \',-");
                         Console.Write("Write Here, press enter for a new line: ");
                         string line;
-                        List<char> chars = new List<char>();
+                        List<string> chars = new List<string>();
                         List<string> encodedChars = new List<string>();
-                        do
+                        while (true)
                         {
                             line = Console.ReadLine();
+                            if (line.Contains("STOP") || line.Contains("SAVE")) { break; }
                             line = line.Replace(" ", null);
                             if (line.Contains("-") && !line.EndsWith("-") && !line.StartsWith("-"))
                             {
@@ -125,7 +135,7 @@ namespace Custom_Text_Encoder
                                     if (splittedString.Length == 2 && splittedString[0].Length == 1 && !subString.Contains(',') && !subString.Contains('\'')) //splittedString.Length ottiene il numero di sotto-stringhe in cui è stato divisa la variabile, se questo numero non è 2 vuol dire che è stato messo più di un trattino(tipo a-b-z) perchè con un solo trattino si ottengono solamente 2 sotto-stringhe
                                     {
                                         Debug.WriteLine($"\u2713{subString}");
-                                        chars.Add(splittedString[0][0]);
+                                        chars.Add(splittedString[0]);
                                         encodedChars.Add(splittedString[1]);
                                     }
                                     else
@@ -133,13 +143,14 @@ namespace Custom_Text_Encoder
                                         WriteWithColor($"Ignored {subString}, incorrect text formatting", ConsoleColor.Yellow, true);
                                     }
                                 }
-                                //Create jsonFile call function from here
                             }
                             else
                             {
                                 WriteWithColor("Ignored line, incorrect text formatting", ConsoleColor.Yellow, true);
                             }
-                        } while (!line.Contains("STOP"));
+                        }
+                        //Create jsonFile call function from here
+                        if (line.Contains("SAVE") && chars.Count > 0) { CreateJSONCodec("temp.json", chars, encodedChars); }
                         break;
                     case 5:
                         throw new NotImplementedException(); break;
