@@ -26,6 +26,11 @@ namespace Custom_Text_Encoder
             Console.ForegroundColor = oldColor;
         }
 
+        static string RemoveIllegalChar(string text)
+        {
+            foreach (char c in "\\/:*\"?<>|") { text = text.Replace(c.ToString(), null); }
+            return text;
+        }
         static bool CheckCodec(string filePath)
         {
             Console.Write("Codec status: ");
@@ -101,8 +106,8 @@ namespace Custom_Text_Encoder
                             else result = 0;
                         }
                         break;
-                    case 2:
-                    case 3:
+                    case 2: break;
+                    case 3: break;
                     case 4:
                         Console.Write("Hi, to create a new encoding format you need to follow these rules:\nThe text format must be the following: ");
                         WriteWithColor('X', ConsoleColor.Yellow);
@@ -132,30 +137,52 @@ namespace Custom_Text_Encoder
                                 foreach (string subString in line.Split(','))
                                 {
                                     string[] splittedString = subString.Split('-');
+                                    if (splittedString[0] == splittedString[1]) { WriteWithColor("The char and its encoded version are the same, skipping...", ConsoleColor.Yellow, true); continue; }
                                     if (splittedString.Length == 2 && splittedString[0].Length == 1 && !subString.Contains(',') && !subString.Contains('\'')) //splittedString.Length ottiene il numero di sotto-stringhe in cui è stato divisa la variabile, se questo numero non è 2 vuol dire che è stato messo più di un trattino(tipo a-b-z) perchè con un solo trattino si ottengono solamente 2 sotto-stringhe
                                     {
-                                        Debug.WriteLine($"\u2713{subString}");
-                                        chars.Add(splittedString[0]);
-                                        encodedChars.Add(splittedString[1]);
+                                        int charPosition = chars.IndexOf(splittedString[0]);
+                                        if (charPosition != -1) //check if char is already in the list
+                                        {
+                                            WriteWithColor($"\"{splittedString[0]}\" already exists, it will be overwritten", ConsoleColor.Yellow, true);
+#if DEBUG
+                                            Debug.WriteLine($"\u26A0{splittedString[0]}({encodedChars[charPosition]} => {splittedString[1]})");
+#endif
+                                            encodedChars[charPosition] = splittedString[1];
+                                        }
+                                        else
+                                        {
+                                            chars.Add(splittedString[0]);
+                                            encodedChars.Add(splittedString[1]);
+#if DEBUG
+                                            Debug.WriteLine($"\u2713{subString}");
+#endif
+                                        }
                                     }
                                     else
                                     {
-                                        WriteWithColor($"Ignored {subString}, incorrect text formatting", ConsoleColor.Yellow, true);
+                                        WriteWithColor($"Ignored {subString}, incorrect text formatting", ConsoleColor.DarkYellow, true);
                                     }
                                 }
                             }
                             else
                             {
-                                WriteWithColor("Ignored line, incorrect text formatting", ConsoleColor.Yellow, true);
+                                WriteWithColor("Ignored line, incorrect text formatting", ConsoleColor.DarkYellow, true);
                             }
                         }
-                        //Create jsonFile call function from here
-                        if (line.Contains("SAVE") && chars.Count > 0) { CreateJSONCodec("temp.json", chars, encodedChars); }
+                        if (line.Contains("SAVE") && chars.Count > 0)
+                        {
+                            Console.Clear();
+                            Console.WriteLine("Codec overview: ");
+                            for (int i = 0; i < chars.Count; i++)
+                            {
+                                Console.WriteLine($"{chars[i]} => {encodedChars[i]}");
+                            }
+                            Console.Write("Insert filename: ");
+                            string filePath = RemoveIllegalChar(Console.ReadLine());
+                            CreateJSONCodec(filePath.EndsWith(".json") ? filePath : filePath + ".json", chars, encodedChars);
+                        }
                         break;
-                    case 5:
-                        throw new NotImplementedException(); break;
-                    default:
-                        break;
+                    case 5: break;
                 }
             } while (result == 0);
 #if DEBUG
