@@ -13,6 +13,7 @@ namespace Custom_Text_Encoder
     {
         static string codecPath = "";
         static bool isCodecLoaded;
+        static ConsoleColor LMED = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
         static void WriteWithColor<T>(T value, ConsoleColor color, bool endLine = false)
         {
             ConsoleColor oldColor = Console.ForegroundColor;
@@ -36,6 +37,7 @@ namespace Custom_Text_Encoder
 
         static bool CheckCodec(string filePath)
         {
+            LMED = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
             Console.Write("Codec status: ");
             if (File.Exists(filePath))
             {
@@ -84,7 +86,7 @@ namespace Custom_Text_Encoder
 
         }
 
-        static string ChooseCodec()
+        static string ChooseCodec(bool onlyCheck = false)
         {
             List<string> codecs = new List<string>();
             foreach (string filePath in Directory.GetFiles(Environment.CurrentDirectory))
@@ -102,6 +104,7 @@ namespace Custom_Text_Encoder
 
             if (codecs.Count > 0)
             {
+                if (onlyCheck) { return bool.TrueString; }
                 int codecNumber;
                 do
                 {
@@ -120,6 +123,7 @@ namespace Custom_Text_Encoder
                 } while (codecNumber <= 0 || codecNumber > codecs.Count);
                 return codecs[codecNumber - 1];
             }
+            if (onlyCheck) return bool.FalseString;
 Exit:
             return string.Empty;
         }
@@ -130,12 +134,18 @@ Exit:
             {
                 Console.Clear();
                 isCodecLoaded = CheckCodec(codecPath);
-                Console.Write($"Select Mode\n1. Encode\n2. Decode\n3. Load Encoding Format\n4. Create Encoding Format\n5. Modify Encoding Format\n6. Export Codec\n7. Import Codec\n8. Delete Codec\n\nChoose an option: ");
+                Console.WriteLine($"Select Mode\n1. Encode\n2. Decode");
+                WriteWithColor("3. Load Encoding Format", LMED, true);
+                Console.WriteLine("4. Create Encoding Format");
+                WriteWithColor("5. Modify Encoding Format\n6. Export Codec", LMED, true);
+                Console.WriteLine("7. Import Codec");
+                WriteWithColor("8. Delete Codec", LMED, true);
+                Console.Write("\nChoose an option: ");
                 int.TryParse(Console.ReadLine(), out result);
                 Console.Clear();
                 switch (result)
                 {
-                    #region "TODO"
+                    #region "TODO Encode/Decode"
                     case 1:
                     case 2:
                         if (!isCodecLoaded)
@@ -152,7 +162,7 @@ Exit:
                         result = 0;
                         break;
                     #endregion
-                    #region "Create codec"
+                    #region "Create Codec"
                     case 4:
                         Console.Clear();
                         Console.Write("Hi, to create a new encoding format you need to follow these rules:\nThe text format must be the following: ");
@@ -240,24 +250,45 @@ skipFile:
                         result = 0;
                         break;
                     #endregion
+                    #region "Export Codec"
+                    case 6:
+                        string codec_6 = ChooseCodec();
+                        if (codec_6 != string.Empty)
+                        {
+                            string newFilePath = Environment.GetEnvironmentVariable("userprofile") + "\\Desktop\\" + codec_6.Replace(Environment.CurrentDirectory, null);
+                            if (File.Exists(newFilePath))
+                            {
+                                Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
+                                if(Console.ReadLine().ToUpper() == "N") goto skipFile;
+                            }
+                            File.Copy(codec_6, newFilePath, true);
+                            Console.Clear();
+                            Console.WriteLine("Codec exported on Desktop.");
+                            System.Threading.Thread.Sleep(1000);
+                        }
+                        result = 0;
+                        break;
+                    #endregion
+                    #region "Delete Codec"
                     case 8:
                         for (int i = 0; i < Console.WindowWidth / 2 - 4; i++)
                         {
                             Console.Write(' ');
                         }
                         WriteWithColor("WARNING!", ConsoleColor.DarkRed, true);
-                        WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 44}}}", "If you choose to delete a Codec, unless you have a backup, you will permanently lost it!"), ConsoleColor.Red,true);
-                        WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 43}}}","There is no confirmation for deleting files, so choose wisely. if you understood, then"), ConsoleColor.Red, true);
+                        WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 44}}}", "If you choose to delete a Codec, unless you have a backup, you will permanently lost it!"), ConsoleColor.Red, true);
+                        WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 43}}}", "There is no confirmation for deleting files, so choose wisely. if you understood, then"), ConsoleColor.Red, true);
                         for (int i = 0; i < Console.WindowWidth / 2 - 12; i++)
                         {
                             Console.Write(' ');
                         }
                         WriteWithColor("Press a key to continue...", ConsoleColor.DarkMagenta, true);
                         Console.ReadKey();
-                        string codec = ChooseCodec();
-                        if (codec != string.Empty) File.Delete(codec);
+                        string codec_8 = ChooseCodec();
+                        if (codec_8 != string.Empty) File.Delete(codec_8);
                         result = 0;
                         break;
+                    #endregion
                     default: result = 0; break;
                 }
             } while (result == 0);
