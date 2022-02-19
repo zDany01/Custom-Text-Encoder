@@ -11,34 +11,24 @@ namespace Custom_Text_Encoder
 {
     internal class Program
     {
-        static void Main()
+        static bool CheckCodec(string filePath)
         {
-            string codecStatus = File.Exists("codec.json") ? "Loaded" : "Not Loaded";
-            Console.Write($"Select Mode:\n1. Encode.\n2. Decode.\n3. Load Encoding Codec(Current status: {codecStatus}).\n4. Create Encoding Codec.\n5. Modify Encoding Codec.\nChoose an option: ");
-            switch (Convert.ToInt32(Console.ReadLine()))
+            Console.Write("Codec status: ");
+            if (File.Exists(filePath))
             {
-                case 0: //debug
-                    char[] normalChar = {}; string[] encodedChar = {};
-                    SetupArray(JSONNode.Parse(File.ReadAllText("codec.json")), normalChar, encodedChar);
-                    Console.ReadLine();
-                    break;
-                case 1:
-                case 2:
-                case 3:
-                case 4:
-                case 5:
-                    throw new NotImplementedException();
-                    break;
+                string fileContents = File.ReadAllText(filePath);
+                if (fileContents.StartsWith("{") && fileContents.EndsWith("}"))
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("Loaded");
+                    Console.ResetColor();
+                    return true;
+                }
             }
-        }
-
-        static string Chiper(string text, char[] normalChar, string[] encodedChar)
-        {
-            for (int i = 0; i < normalChar.Length; i++)
-            {
-                text = text.Replace(normalChar[i].ToString(), encodedChar[i]);
-            }
-            return text;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Not Loaded");
+            Console.ResetColor();
+            return false;
         }
 
         static void SetupArray(JSONNode jsonFile, char[] normalChar, string[] encodedChar)
@@ -50,8 +40,57 @@ namespace Custom_Text_Encoder
                 keys.Add(item.Key[0]);
                 values.Add(item.Value);
             }
+#pragma warning disable IDE0059
             normalChar = keys.ToArray();
             encodedChar = values.ToArray();
+#pragma warning restore IDE0059
+        }
+
+        static string Chiper(string text, char[] normalChar, string[] encodedChar)
+        {
+            for (int i = 0; i < normalChar.Length; i++)
+            {
+                text = text.Replace(normalChar[i].ToString(), encodedChar[i]);
+            }
+            return text;
+        }
+
+        static void Main()
+        {
+            int result = 0;
+            do {
+                Console.Clear();
+                string codecPath = "";
+                bool isCodecLoaded = CheckCodec(codecPath);
+                //string codecStatus = File.Exists("codec.json") ? "Loaded" : "Not Loaded";
+                Console.Write($"Select Mode:\n1. Encode\n2. Decode\n3. Load Encoding Format\n4. Create Encoding Format\n5. Modify Encoding Format\nChoose an option: ");
+                int.TryParse(Console.ReadLine(), out result);
+                Debug.WriteLine(result);
+                switch (result)
+                {
+                    case -1:
+                        Console.ReadLine();
+                        break;
+                    case 1:
+                        Console.Clear();
+                        if (!isCodecLoaded)
+                        {
+                            Console.Write("Choose an encoding format before!\n\nType 0 to create a new encoding format or press enter to restart the program: ");
+                        }
+                        break;
+                    case 2:
+                    case 3:
+                    case 4:
+                    case 5:
+                        throw new NotImplementedException(); break;
+                    default:
+                        break;
+                }
+            } while (result == 0);
+#if DEBUG
+            Console.WriteLine("\n\n\n[DEBUG] Press a key to close the program.");
+            Console.ReadKey();
+#endif
         }
     }
 }
