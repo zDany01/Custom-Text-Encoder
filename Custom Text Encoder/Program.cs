@@ -82,7 +82,7 @@ namespace Custom_Text_Encoder
             {
                 file.Add(chars[i], encodedChars[i]);
             }
-            File.WriteAllText(filePath, file.AsObject.ToString(0)); //Questo ToString() non è quello di Microsoft, è una funzione stessa della libreria EasyJSON, il numero indica se usare la formattazione(mantenere gli spazi)
+            File.WriteAllText(filePath, file.AsObject.ToString(0)); //Questo ToString() non è quello di Microsoft, è una funzione stessa della libreria SimpleJSON, il numero indica se usare la formattazione(mantenere gli spazi)
 
         }
 
@@ -94,11 +94,7 @@ namespace Custom_Text_Encoder
                 string fileName = filePath.Replace(Environment.CurrentDirectory, null).Remove(0, 1);
                 if (fileName.EndsWith(".json"))
                 {
-                    string fileContents = File.ReadAllText(filePath);
-                    if (fileContents.StartsWith("{") && fileContents.EndsWith("}"))
-                    {
-                        codecs.Add(fileName);
-                    }
+                    if (IsValidCodec(fileName)) { codecs.Add(fileName); }
                 }
             }
 
@@ -118,7 +114,7 @@ namespace Custom_Text_Encoder
                     WriteWithColor("ABORT", ConsoleColor.DarkRed);
                     Console.Write(": ");
                     string reply = Console.ReadLine();
-                    if (reply == "ABORT") goto Exit;
+                    if (reply == "ABORT" || reply == string.Empty) goto Exit;
                     int.TryParse(reply, out codecNumber);
                 } while (codecNumber <= 0 || codecNumber > codecs.Count);
                 return codecs[codecNumber - 1];
@@ -127,6 +123,43 @@ namespace Custom_Text_Encoder
 Exit:
             return string.Empty;
         }
+
+        static bool IsValidCodec(string filePath, bool writeInvalid = false)
+        {
+            if (!File.Exists(filePath))
+            {
+                if (writeInvalid) WriteWithColor("The specified file doesn't exists.\n", ConsoleColor.DarkYellow, true);
+                return false;
+            }
+
+            string fileContents = File.ReadAllText(filePath);
+            if (string.IsNullOrEmpty(fileContents) || fileContents.Count(_ => (_ == '{')) > 1)
+            {
+                if (writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
+                return false;
+            }
+
+            JSONNode jsonFile = JSONNode.Parse(fileContents);
+            int jsonFileLine = 0;
+            foreach (KeyValuePair<string, JSONNode> keyValuePair in jsonFile)
+            {
+                if (keyValuePair.Key.Length != 1)
+                {
+#if DEBUG
+                    Debug.WriteLine($"\u2717{keyValuePair.Key} - line {jsonFileLine}");
+#endif
+                    if(writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
+                    return false;
+                }
+                jsonFileLine++;
+            }
+#if DEBUG
+            Debug.WriteLine($"\u2713{Path.GetFileNameWithoutExtension(filePath)}");
+#endif
+            return true;
+        }
+
+
         static void Main()
         {
             int result;
@@ -174,7 +207,7 @@ Exit:
                         Console.Write(" is the character that you want to encode\n - ");
                         WriteWithColor('Y', ConsoleColor.Green);
                         Console.Write(" is the encoded form of that character\nFor example if i want to encode all \"A\" to become \"z\", I'll write A-z\nThe program will accept input until you write ");
-                        WriteWithColor("STOP", ConsoleColor.Red);
+                        WriteWithColor("ABORT", ConsoleColor.Red);
                         Console.Write(" to abort or ");
                         WriteWithColor("SAVE", ConsoleColor.Green);
                         Console.WriteLine(" to save");
@@ -186,14 +219,14 @@ Exit:
                         while (true)
                         {
                             line = Console.ReadLine();
-                            if (line.Contains("STOP") || line.Contains("SAVE")) { break; }
+                            if (line.Contains("ABORT") || line.Contains("SAVE")) { break; }
                             line = line.Replace(" ", null);
                             if (line.Contains("-") && !line.EndsWith("-") && !line.StartsWith("-"))
                             {
                                 foreach (string subString in line.Split(','))
                                 {
                                     string[] splittedString = subString.Split('-');
-                                    if (splittedString[0] == splittedString[1]) { WriteWithColor("The char and its encoded version are the same, skipping...", ConsoleColor.Yellow, true); continue; }
+                                    if (splittedString[0] == splittedString[1]) { WriteWithColor($"The char({splittedString[0]}) and its encoded version({splittedString[1]}) are the same, skipping...", ConsoleColor.DarkYellow, true); continue; }
                                     if (splittedString.Length == 2 && splittedString[0].Length == 1 && !subString.Contains(',') && !subString.Contains('\'')) //splittedString.Length ottiene il numero di sotto-stringhe in cui è stato divisa la variabile, se questo numero non è 2 vuol dire che è stato messo più di un trattino(tipo a-b-z) perchè con un solo trattino si ottengono solamente 2 sotto-stringhe
                                     {
                                         int charPosition = chars.IndexOf(splittedString[0]);
@@ -231,7 +264,9 @@ Exit:
                             Console.WriteLine("Codec overview: ");
                             for (int i = 0; i < chars.Count; i++)
                             {
-                                Console.WriteLine($"{chars[i]} => {encodedChars[i]}");
+                                WriteWithColor(chars[i], ConsoleColor.Blue);
+                                Console.Write(" => ");
+                                WriteWithColor(encodedChars[i], ConsoleColor.Cyan, true);
                             }
                             Console.Write("Insert filename: ");
                             string filePath = RemoveIllegalChar(Console.ReadLine());
@@ -239,14 +274,14 @@ Exit:
                             if (!filePath.EndsWith(".json")) filePath += ".json";
                             if (File.Exists(filePath))
                             {
-                                Console.Write($"File {filePath.Replace(Environment.CurrentDirectory, null).Replace(".json", null)} already exists. Do you want to overwrite it? (Y/N): ");
-                                if (Console.ReadLine().ToUpper() == "N") goto skipFile;
+                                Console.Write($"File {filePath.Replace(Environment.CurrentDirectory, null).Replace(".json", null)} already exists. Do you want to overwrite it? (Y/n): ");
+                                if (Console.ReadLine().ToUpper() == "N") goto skipIt;
                             }
                             CreateJSONCodec(filePath, chars, encodedChars);
-                            Console.Write("\nFile saved successfully, do you want to load it? (Y/N): ");
+                            Console.Write("\nFile saved successfully, do you want to load it? (y/N): ");
                             if (Console.ReadLine().ToUpper() == "Y") codecPath = filePath;
                         }
-skipFile:
+skipIt:
                         result = 0;
                         break;
                     #endregion
@@ -255,17 +290,53 @@ skipFile:
                         string codec_6 = ChooseCodec();
                         if (codec_6 != string.Empty)
                         {
-                            string newFilePath = Environment.GetEnvironmentVariable("userprofile") + "\\Desktop\\" + codec_6.Replace(Environment.CurrentDirectory, null);
-                            if (File.Exists(newFilePath))
+                            string newExportedFilePath = Environment.GetEnvironmentVariable("userprofile") + "\\Desktop\\" + codec_6.Replace(Environment.CurrentDirectory, null);
+                            if (File.Exists(newExportedFilePath))
                             {
                                 Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
-                                if(Console.ReadLine().ToUpper() == "N") goto skipFile;
+                                if (Console.ReadLine().ToUpper() == "N") goto skipIt;
                             }
-                            File.Copy(codec_6, newFilePath, true);
+                            File.Copy(codec_6, newExportedFilePath, true);
                             Console.Clear();
                             Console.WriteLine("Codec exported on Desktop.");
                             System.Threading.Thread.Sleep(1000);
                         }
+                        result = 0;
+                        break;
+                    #endregion
+                    #region "Import Codec"
+                    case 7:
+                        bool isValid = false;
+                        string codecName = "If you see me, there is a bug the program :/\n If you are an user, please open a report on GitHub https://github.com/zDany01/Custom-Text-Encoder/issues"; //:)
+                        string importFilePath;
+                        do
+                        {
+                            Console.WriteLine("To import a file:\n- Write the file path\n- Drag the file in the console window\n");
+                            Console.Write("Write file path here or type ");
+                            WriteWithColor("ABORT", ConsoleColor.DarkRed);
+                            Console.Write(": ");
+                            importFilePath = Console.ReadLine().Replace("\"",null);
+                            if (importFilePath == string.Empty || importFilePath == "ABORT") goto skipIt;
+                            Console.Clear();
+                            if (importFilePath.Contains("/") || importFilePath.Contains("\\")) isValid = IsValidCodec(importFilePath, true);
+                            else WriteWithColor("Insert a valid file path\n", ConsoleColor.DarkYellow, true);
+                            if (isValid) codecName = Path.GetFileNameWithoutExtension(importFilePath);
+                        } while (!isValid);
+                        Console.Clear();
+                        string newFilePath = $"{Environment.CurrentDirectory}\\{codecName}.json";
+                        if (File.Exists(newFilePath))
+                        {
+                            Console.Write($"The codec ");
+                            WriteWithColor(codecName, ConsoleColor.DarkCyan);
+                            Console.Write(" already exists, do you want to ");
+                            WriteWithColor("overwrite", ConsoleColor.Red);
+                            Console.Write(" it? (Y/n): ");
+                            if (Console.ReadLine().ToUpper() == "N") goto skipIt;
+                        }
+                        File.Copy(importFilePath,newFilePath, true);
+                        WriteWithColor($"\nSuccessfully imported {codecName}", ConsoleColor.Green, true);
+                        Console.Write("Do you want to load it? (y/N): ");
+                        if (Console.ReadLine().ToUpper() == "Y") codecPath = codecName + ".json";
                         result = 0;
                         break;
                     #endregion
@@ -292,10 +363,6 @@ skipFile:
                     default: result = 0; break;
                 }
             } while (result == 0);
-#if DEBUG
-            Console.WriteLine("\n\n\n[DEBUG] Press a key to close the program.");
-            Console.ReadKey();
-#endif
         }
     }
 }
