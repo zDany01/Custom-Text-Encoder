@@ -148,7 +148,7 @@ Exit:
 #if DEBUG
                     Debug.WriteLine($"\u2717{keyValuePair.Key} - line {jsonFileLine}");
 #endif
-                    if(writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
+                    if (writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
                     return false;
                 }
                 jsonFileLine++;
@@ -290,15 +290,63 @@ skipIt:
                         string codec_6 = ChooseCodec();
                         if (codec_6 != string.Empty)
                         {
-                            string newExportedFilePath = Environment.GetEnvironmentVariable("userprofile") + "\\Desktop\\" + codec_6.Replace(Environment.CurrentDirectory, null);
+                            string reply_6;
+                            string newExportedFilePath = "PGRARPT";
+                            string exportedMessage = string.Empty;
+                            do
+                            {
+                                Console.Clear();
+                                Console.WriteLine("Where do you want to export this file?\n1. Documents folder\n2. Desktop\n3. User folder\n4. Custom path\n");
+                                Console.Write("Choose or type ");
+                                WriteWithColor("ABORT", ConsoleColor.DarkRed);
+                                Console.Write(": ");
+                                reply_6 = Console.ReadLine();
+                                switch (reply_6)
+                                {
+                                    case "ABORT": goto skipIt;
+                                    case "1":
+                                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                                        exportedMessage = "Codec successfully exported in Documents";
+                                        break;
+                                    case "2":
+                                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                                        exportedMessage = "Codec successfully exported on Desktop";
+                                        break;
+                                    case "3":
+                                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                                        exportedMessage = "Codec successfully exported in User folder";
+                                        break;
+                                    case "4":
+                                        Console.Write("Type here the custom directory path: ");
+                                        newExportedFilePath = Console.ReadLine().Replace('/', '\\');
+                                        if (!Directory.Exists(newExportedFilePath)) Directory.CreateDirectory(newExportedFilePath);
+                                        if (newExportedFilePath.EndsWith("\\")) newExportedFilePath = newExportedFilePath.Remove(newExportedFilePath.Length - 1, 1);
+                                        exportedMessage = $"Codec successfully exported in {newExportedFilePath.Remove(0, newExportedFilePath.LastIndexOf("\\") + 1)}";
+                                        break;
+                                    default: reply_6 = "PGRARPT"; break;
+                                }
+                            } while (reply_6 == "PGRARPT");
+
+                            newExportedFilePath += "\\" + codec_6.Replace(Environment.CurrentDirectory, null);
                             if (File.Exists(newExportedFilePath))
                             {
                                 Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
                                 if (Console.ReadLine().ToUpper() == "N") goto skipIt;
                             }
-                            File.Copy(codec_6, newExportedFilePath, true);
+                            try
+                            {
+                                File.Copy(codec_6, newExportedFilePath, true);
+                            }
+                            catch (UnauthorizedAccessException)
+                            {
+                                Console.Clear();
+                                WriteWithColor("I can't save that file there, try restart me as an administrator", ConsoleColor.DarkRed, true);
+                                System.Threading.Thread.Sleep(2000);
+                                goto skipIt;
+                            }
+
                             Console.Clear();
-                            Console.WriteLine("Codec exported on Desktop.");
+                            Console.WriteLine(exportedMessage);
                             System.Threading.Thread.Sleep(1000);
                         }
                         result = 0;
@@ -315,7 +363,7 @@ skipIt:
                             Console.Write("Write file path here or type ");
                             WriteWithColor("ABORT", ConsoleColor.DarkRed);
                             Console.Write(": ");
-                            importFilePath = Console.ReadLine().Replace("\"",null);
+                            importFilePath = Console.ReadLine().Replace("\"", null);
                             if (importFilePath == string.Empty || importFilePath == "ABORT") goto skipIt;
                             Console.Clear();
                             if (importFilePath.Contains("/") || importFilePath.Contains("\\")) isValid = IsValidCodec(importFilePath, true);
@@ -333,7 +381,7 @@ skipIt:
                             Console.Write(" it? (Y/n): ");
                             if (Console.ReadLine().ToUpper() == "N") goto skipIt;
                         }
-                        File.Copy(importFilePath,newFilePath, true);
+                        File.Copy(importFilePath, newFilePath, true);
                         WriteWithColor($"\nSuccessfully imported {codecName}", ConsoleColor.Green, true);
                         Console.Write("Do you want to load it? (y/N): ");
                         if (Console.ReadLine().ToUpper() == "Y") codecPath = codecName + ".json";
