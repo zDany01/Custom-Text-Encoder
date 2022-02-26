@@ -34,7 +34,10 @@ namespace Custom_Text_Encoder
 
         static string RemoveIllegalChar(string text)
         {
-            foreach (char c in "\\/:*\"?<>|") { text = text.Replace(c.ToString(), null); }
+            foreach (char Char in Path.GetInvalidFileNameChars())
+            {
+                text = text.Replace(Char.ToString(), null);
+            }
             return text;
         }
 
