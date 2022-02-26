@@ -54,19 +54,16 @@ namespace Custom_Text_Encoder
             return false;
         }
 
-        static void SetupArray(JSONNode jsonFile, char[] normalChar, string[] encodedChar)
+        static void SetupLists(out List<string> key, out List<string> value)
         {
-            List<char> keys = new List<char>();
-            List<string> values = new List<string>();
-            foreach (var item in jsonFile)
+            JSONNode json = JSONNode.Parse(File.ReadAllText(codecPath));
+            key = new List<string>();
+            value = new List<string>();
+            foreach(KeyValuePair<string, JSONNode> keyValuePair in json)
             {
-                keys.Add(item.Key[0]);
-                values.Add(item.Value);
+                key.Add(keyValuePair.Key);
+                value.Add(keyValuePair.Value);
             }
-#pragma warning disable IDE0059
-            normalChar = keys.ToArray();
-            encodedChar = values.ToArray();
-#pragma warning restore IDE0059
         } //TODO: Rework this in optimization
 
         static void CreateJSONCodec(string filePath, List<string> chars, List<string> encodedChars)
@@ -177,14 +174,15 @@ Exit:
                         {
                             if (isCodecLoaded)
                             {
-                                JSONNode codec = JSONNode.Parse(File.ReadAllText(codecPath));
+                                /*JSONNode codec = JSONNode.Parse(File.ReadAllText(codecPath));
                                 List<string> normalChar = new List<string>();
                                 List<string> encodedValue = new List<string>();
                                 foreach (KeyValuePair<string, JSONNode> keyValuePairs in codec)
                                 {
                                     normalChar.Add(keyValuePairs.Key);
                                     encodedValue.Add(keyValuePairs.Value);
-                                }
+                                }*/ //Backup
+                                SetupLists(out List<string> normalChar, out List<string> encodedValue);
                                 Console.Write("Type here the text that you want to encode, the program will accept user input until you write ");
                                 WriteWithColor("ENCODE\n", ConsoleColor.Green, true);
                                 string textToEncode = string.Empty;
@@ -248,14 +246,15 @@ Exit:
                         {
                             if (isCodecLoaded)
                             {
-                                JSONNode codec = JSONNode.Parse(File.ReadAllText(codecPath));
+                                /*JSONNode codec = JSONNode.Parse(File.ReadAllText(codecPath));
                                 List<string> normalChar = new List<string>();
                                 List<string> encodedValue = new List<string>();
                                 foreach(KeyValuePair<string, JSONNode> keyValuePair in codec)
                                 {
                                     normalChar.Add(keyValuePair.Key);
                                     encodedValue.Add(keyValuePair.Value);
-                                }
+                                }*/ //Backup
+                                SetupLists(out List<string> normalChar, out List<string> encodedValue);
                                 Console.Write("Type here the text that you want to decode, the program will accept user input until you write ");
                                 WriteWithColor("DECODE\n", ConsoleColor.Green, true);
                                 string textToDecode = string.Empty;
@@ -403,15 +402,15 @@ Exit:
                             if (isCodecLoaded)
                             {
                                 string modifyLine;
-                                List<string> codecChars = new List<string>();
+                                /*List<string> codecChars = new List<string>();
                                 List<string> modifiedChars = new List<string>();
-
                                 JSONNode jsonCodec = JSONNode.Parse(File.ReadAllText(codecPath));
                                 foreach (KeyValuePair<string, JSONNode> keyValuePairs in jsonCodec)
                                 {
                                     codecChars.Add(keyValuePairs.Key);
                                     modifiedChars.Add(keyValuePairs.Value);
-                                }
+                                } */ //Backup
+                                SetupLists(out List<string> codecChars, out List<string> modifiedChars);
                                 bool restartModify;
                                 do
                                 {
