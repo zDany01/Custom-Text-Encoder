@@ -191,7 +191,7 @@ Exit:
                     #endregion
                     #region "Load Codec"
                     case 3:
-                        codecPath = ChooseCodec();
+                        if (LMED != ConsoleColor.DarkGray) codecPath = ChooseCodec();
                         result = 0;
                         break;
                     #endregion
@@ -243,7 +243,7 @@ Exit:
                                             chars.Add(splittedString[0]);
                                             encodedChars.Add(splittedString[1]);
 #if DEBUG
-                                            Debug.WriteLine($"\u2713{subString}");
+                                            Debug.WriteLine($"\u2795{subString}");
 #endif
                                         }
                                     }
@@ -285,69 +285,239 @@ skipIt:
                         result = 0;
                         break;
                     #endregion
+                    #region "Modify Codec"
+                    case 5:
+                        if (LMED != ConsoleColor.DarkGray)
+                        {
+                            if (isCodecLoaded)
+                            {
+                                string modifyLine;
+                                List<string> codecChars = new List<string>();
+                                List<string> modifiedChars = new List<string>();
+
+                                JSONNode jsonCodec = JSONNode.Parse(File.ReadAllText(codecPath));
+                                foreach (KeyValuePair<string, JSONNode> keyValuePairs in jsonCodec)
+                                {
+                                    codecChars.Add(keyValuePairs.Key);
+                                    modifiedChars.Add(keyValuePairs.Value);
+                                }
+                                bool restartModify;
+                                do{
+                                    restartModify = false;
+                                    Console.Clear();
+                                    Console.Write("Hi, to modify an encoding format you need to follow these rules:\nThe text format must be the following: ");
+                                    WriteWithColor('X', ConsoleColor.Yellow);
+                                    Console.Write('-');
+                                    WriteWithColor("YYY", ConsoleColor.DarkGreen);
+                                    Console.Write(" where\n - ");
+                                    WriteWithColor('X', ConsoleColor.Yellow);
+                                    Console.Write(" is the character that you want to modify or add\n - ");
+                                    WriteWithColor('Y', ConsoleColor.Green);
+                                    Console.Write(" is the encoded or modified version of that character\nFor example if i want to modify all \"z\" to become \"A\", I'll write z-A\nFor deleting an existing character, you will need to type ");
+                                    WriteWithColor("DELETE ", ConsoleColor.DarkRed);
+                                    WriteWithColor('X', ConsoleColor.Yellow);
+                                    Console.Write(" where ");
+                                    WriteWithColor('X', ConsoleColor.Yellow);
+                                    Console.Write(" is the character\nTo see which characters are already present type ");
+                                    WriteWithColor("LIST", ConsoleColor.Magenta, true);
+                                    Console.Write("The program will accept input until you write ");
+                                    WriteWithColor("ABORT", ConsoleColor.Red);
+                                    Console.Write(" to abort or ");
+                                    WriteWithColor("SAVE", ConsoleColor.Green);
+                                    Console.WriteLine(" to save");
+                                    Console.Write("You can write multiple entries in two ways:\n 1. Separated by a comma(Ex: z-A, Q-L, x-3, 2-z)\n 2. By writing one at time, Ex:\nz-A\nQ-L\nx-3\n2-z");
+                                    Console.WriteLine("\nIllegal characters are \',-");
+                                    Console.Write("Write Here, press enter for a new line: ");
+                                    while (true)
+                                    {
+                                        modifyLine = Console.ReadLine();
+                                        if (modifyLine.Contains("ABORT") || modifyLine.Contains("SAVE")) break;
+                                        else if (modifyLine == "LIST")
+                                        {
+                                            for (int i = 0; i < codecChars.Count; i++)
+                                            {
+                                                WriteWithColor(codecChars[i], ConsoleColor.Blue);
+                                                Console.Write(" => ");
+                                                WriteWithColor(modifiedChars[i], ConsoleColor.Cyan, true);
+                                            }
+                                            continue;
+                                        }
+                                        modifyLine = modifyLine.Replace(" ", null);
+                                        if (modifyLine.Contains("DELETE"))
+                                        {
+                                            modifyLine = modifyLine.Replace("DELETE", null);
+                                            if (modifyLine.Length == 1)
+                                            {
+                                                int charPosition = codecChars.IndexOf(modifyLine);
+                                                if (charPosition != -1)
+                                                {
+#if DEBUG
+                                                    Debug.WriteLine($"\u2326{codecChars.ElementAt(charPosition)}");
+#endif
+                                                    codecChars.RemoveAt(charPosition);
+                                                    modifiedChars.RemoveAt(charPosition);
+                                                }
+                                                else
+                                                {
+                                                    WriteWithColor($"Can't delete {modifyLine} from the list because it isn't present", ConsoleColor.DarkYellow, true);
+                                                }
+                                            }
+                                            else
+                                            {
+                                                WriteWithColor("Ignored line, incorrect text formatting", ConsoleColor.DarkYellow, true);
+                                            }
+                                            continue;
+                                        }
+                                        else
+                                        {
+
+                                            if (modifyLine.Contains("-") && !modifyLine.EndsWith("-") && !modifyLine.StartsWith("-"))
+                                            {
+                                                foreach (string subString in modifyLine.Split(','))
+                                                {
+                                                    string[] splittedString = subString.Split('-');
+                                                    if (splittedString[0] == splittedString[1]) { WriteWithColor($"The char({splittedString[0]}) and its encoded version({splittedString[1]}) are the same, skipping...", ConsoleColor.DarkYellow, true); continue; }
+                                                    if (splittedString.Length == 2 && splittedString[0].Length == 1 && !subString.Contains(',') && !subString.Contains('\'')) //splittedString.Length ottiene il numero di sotto-stringhe in cui è stato divisa la variabile, se questo numero non è 2 vuol dire che è stato messo più di un trattino(tipo a-b-z) perché con un solo trattino si ottengono solamente 2 sotto-stringhe
+                                                    {
+                                                        int charPosition = codecChars.IndexOf(splittedString[0]);
+                                                        if (charPosition != -1) //check if char is already in the list
+                                                        {
+#if DEBUG
+                                                            Debug.WriteLine($"\u26A0{splittedString[0]}({modifiedChars[charPosition]} => {splittedString[1]})");
+#endif
+                                                            WriteWithColor($"{splittedString[0]} has been modified ({modifiedChars[charPosition]} => {splittedString[1]})", ConsoleColor.Cyan, true);
+                                                            modifiedChars[charPosition] = splittedString[1];
+                                                        }
+                                                        else
+                                                        {
+                                                            codecChars.Add(splittedString[0]);
+                                                            modifiedChars.Add(splittedString[1]);
+#if DEBUG
+                                                            Debug.WriteLine($"\u2795{subString}");
+#endif
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        WriteWithColor($"Ignored {subString}, incorrect text formatting", ConsoleColor.DarkYellow, true);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                WriteWithColor("Ignored line, incorrect text formatting", ConsoleColor.DarkYellow, true);
+                                            }
+                                        }
+                                    }
+
+
+                                    if (modifyLine.Contains("SAVE") && codecChars.Count > 0)
+                                    {
+                                        bool redo;
+                                        do
+                                        {
+                                            redo = false;
+                                            Console.Clear();
+                                            Console.WriteLine("Codec overview: ");
+                                            for (int i = 0; i < codecChars.Count; i++)
+                                            {
+                                                WriteWithColor(codecChars[i], ConsoleColor.Blue);
+                                                Console.Write(" => ");
+                                                WriteWithColor(modifiedChars[i], ConsoleColor.Cyan, true);
+                                            }
+                                            Console.Write("What do you want to do?:\n1. Save\n2. Continue Modify \n3. Abort\nChoose: ");
+                                            int.TryParse(Console.ReadLine(), out int reply);
+                                            switch (reply)
+                                            {
+                                                case 1:
+                                                    CreateJSONCodec(codecPath, codecChars, modifiedChars);
+                                                    Console.Write("\nFile modified successfully, do you want to load it? (Y/n): ");
+                                                    if (Console.ReadLine().ToUpper() == "N") codecPath = "";
+                                                    break;
+                                                case 2: restartModify = true; break;
+                                                case 3: goto skipIt;
+                                                default: redo = true; break;
+                                            }
+                                        } while (redo);
+                                    }
+                                } while (restartModify);
+                            }
+                            else
+                            {
+                                WriteWithColor("Select a codec first!", ConsoleColor.Yellow, true);
+                                System.Threading.Thread.Sleep(1500);
+                            }
+
+                        }
+                        result = 0;
+                        break;
+                    #endregion
                     #region "Export Codec"
                     case 6:
-                        string codec_6 = ChooseCodec();
-                        if (codec_6 != string.Empty)
+                        if (LMED != ConsoleColor.DarkGray)
                         {
-                            string reply_6;
-                            string newExportedFilePath = "PGRARPT";
-                            string exportedMessage = string.Empty;
-                            do
+                            string codec_6 = ChooseCodec();
+                            if (codec_6 != string.Empty)
                             {
-                                Console.Clear();
-                                Console.WriteLine("Where do you want to export this file?\n1. Documents folder\n2. Desktop\n3. User folder\n4. Custom path\n");
-                                Console.Write("Choose or type ");
-                                WriteWithColor("ABORT", ConsoleColor.DarkRed);
-                                Console.Write(": ");
-                                reply_6 = Console.ReadLine();
-                                switch (reply_6)
+                                string reply_6;
+                                string newExportedFilePath = "PGRARPT";
+                                string exportedMessage = string.Empty;
+                                do
                                 {
-                                    case "ABORT": goto skipIt;
-                                    case "1":
-                                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                                        exportedMessage = "Codec successfully exported in Documents";
-                                        break;
-                                    case "2":
-                                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                                        exportedMessage = "Codec successfully exported on Desktop";
-                                        break;
-                                    case "3":
-                                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                                        exportedMessage = "Codec successfully exported in User folder";
-                                        break;
-                                    case "4":
-                                        Console.Write("Type here the custom directory path: ");
-                                        newExportedFilePath = Console.ReadLine().Replace('/', '\\');
-                                        if (!Directory.Exists(newExportedFilePath)) Directory.CreateDirectory(newExportedFilePath);
-                                        if (newExportedFilePath.EndsWith("\\")) newExportedFilePath = newExportedFilePath.Remove(newExportedFilePath.Length - 1, 1);
-                                        exportedMessage = $"Codec successfully exported in {newExportedFilePath.Remove(0, newExportedFilePath.LastIndexOf("\\") + 1)}";
-                                        break;
-                                    default: reply_6 = "PGRARPT"; break;
+                                    Console.Clear();
+                                    Console.WriteLine("Where do you want to export this file?\n1. Documents folder\n2. Desktop\n3. User folder\n4. Custom path\n");
+                                    Console.Write("Choose or type ");
+                                    WriteWithColor("ABORT", ConsoleColor.DarkRed);
+                                    Console.Write(": ");
+                                    reply_6 = Console.ReadLine();
+                                    switch (reply_6)
+                                    {
+                                        case "ABORT": goto skipIt;
+                                        case "1":
+                                            newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                                            exportedMessage = "Codec successfully exported in Documents";
+                                            break;
+                                        case "2":
+                                            newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                                            exportedMessage = "Codec successfully exported on Desktop";
+                                            break;
+                                        case "3":
+                                            newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                                            exportedMessage = "Codec successfully exported in User folder";
+                                            break;
+                                        case "4":
+                                            Console.Write("Type here the custom directory path: ");
+                                            newExportedFilePath = Console.ReadLine().Replace('/', '\\');
+                                            if (!Directory.Exists(newExportedFilePath)) Directory.CreateDirectory(newExportedFilePath);
+                                            if (newExportedFilePath.EndsWith("\\")) newExportedFilePath = newExportedFilePath.Remove(newExportedFilePath.Length - 1, 1);
+                                            exportedMessage = $"Codec successfully exported in {newExportedFilePath.Remove(0, newExportedFilePath.LastIndexOf("\\") + 1)}";
+                                            break;
+                                        default: reply_6 = "PGRARPT"; break;
+                                    }
+                                } while (reply_6 == "PGRARPT");
+
+                                newExportedFilePath += "\\" + codec_6.Replace(Environment.CurrentDirectory, null);
+                                if (File.Exists(newExportedFilePath))
+                                {
+                                    Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
+                                    if (Console.ReadLine().ToUpper() == "N") goto skipIt;
                                 }
-                            } while (reply_6 == "PGRARPT");
+                                try
+                                {
+                                    File.Copy(codec_6, newExportedFilePath, true);
+                                }
+                                catch (UnauthorizedAccessException)
+                                {
+                                    Console.Clear();
+                                    WriteWithColor("I can't save that file there, try restart me as an administrator", ConsoleColor.DarkRed, true);
+                                    System.Threading.Thread.Sleep(2000);
+                                    goto skipIt;
+                                }
 
-                            newExportedFilePath += "\\" + codec_6.Replace(Environment.CurrentDirectory, null);
-                            if (File.Exists(newExportedFilePath))
-                            {
-                                Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
-                                if (Console.ReadLine().ToUpper() == "N") goto skipIt;
-                            }
-                            try
-                            {
-                                File.Copy(codec_6, newExportedFilePath, true);
-                            }
-                            catch (UnauthorizedAccessException)
-                            {
                                 Console.Clear();
-                                WriteWithColor("I can't save that file there, try restart me as an administrator", ConsoleColor.DarkRed, true);
-                                System.Threading.Thread.Sleep(2000);
-                                goto skipIt;
+                                Console.WriteLine(exportedMessage);
+                                System.Threading.Thread.Sleep(1000);
                             }
-
-                            Console.Clear();
-                            Console.WriteLine(exportedMessage);
-                            System.Threading.Thread.Sleep(1000);
                         }
                         result = 0;
                         break;
@@ -390,21 +560,24 @@ skipIt:
                     #endregion
                     #region "Delete Codec"
                     case 8:
-                        for (int i = 0; i < Console.WindowWidth / 2 - 4; i++)
+                        if (LMED != ConsoleColor.DarkGray)
                         {
-                            Console.Write(' ');
+                            for (int i = 0; i < Console.WindowWidth / 2 - 4; i++)
+                            {
+                                Console.Write(' ');
+                            }
+                            WriteWithColor("WARNING!", ConsoleColor.DarkRed, true);
+                            WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 44}}}", "If you choose to delete a Codec, unless you have a backup, you will permanently lost it!"), ConsoleColor.Red, true);
+                            WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 43}}}", "There is no confirmation for deleting files, so choose wisely. if you understood, then"), ConsoleColor.Red, true);
+                            for (int i = 0; i < Console.WindowWidth / 2 - 12; i++)
+                            {
+                                Console.Write(' ');
+                            }
+                            WriteWithColor("Press a key to continue...", ConsoleColor.DarkMagenta, true);
+                            Console.ReadKey();
+                            string codec_8 = ChooseCodec();
+                            if (codec_8 != string.Empty) File.Delete(codec_8);
                         }
-                        WriteWithColor("WARNING!", ConsoleColor.DarkRed, true);
-                        WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 44}}}", "If you choose to delete a Codec, unless you have a backup, you will permanently lost it!"), ConsoleColor.Red, true);
-                        WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 43}}}", "There is no confirmation for deleting files, so choose wisely. if you understood, then"), ConsoleColor.Red, true);
-                        for (int i = 0; i < Console.WindowWidth / 2 - 12; i++)
-                        {
-                            Console.Write(' ');
-                        }
-                        WriteWithColor("Press a key to continue...", ConsoleColor.DarkMagenta, true);
-                        Console.ReadKey();
-                        string codec_8 = ChooseCodec();
-                        if (codec_8 != string.Empty) File.Delete(codec_8);
                         result = 0;
                         break;
                     #endregion
