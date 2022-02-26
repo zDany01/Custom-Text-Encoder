@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using SimpleJSON;
 using System.Diagnostics;
+using static System.Threading.Thread;
 
 namespace Custom_Text_Encoder
 {
@@ -13,7 +14,9 @@ namespace Custom_Text_Encoder
     {
         static string codecPath = "";
         static bool isCodecLoaded;
-        static ConsoleColor LMED = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
+        static ConsoleColor EDLMED = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
+
+
         static void WriteWithColor<T>(T value, ConsoleColor color, bool endLine = false)
         {
             ConsoleColor oldColor = Console.ForegroundColor;
@@ -37,7 +40,7 @@ namespace Custom_Text_Encoder
 
         static bool CheckCodec(string filePath)
         {
-            LMED = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
+            EDLMED = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
             Console.Write("Codec status: ");
             if (File.Exists(filePath))
             {
@@ -64,16 +67,7 @@ namespace Custom_Text_Encoder
             normalChar = keys.ToArray();
             encodedChar = values.ToArray();
 #pragma warning restore IDE0059
-        }
-
-        static string Chiper(string text, char[] normalChar, string[] encodedChar)
-        {
-            for (int i = 0; i < normalChar.Length; i++)
-            {
-                text = text.Replace(normalChar[i].ToString(), encodedChar[i]);
-            }
-            return text;
-        }
+        } //TODO: Rework this in optimization
 
         static void CreateJSONCodec(string filePath, List<string> chars, List<string> encodedChars)
         {
@@ -159,7 +153,6 @@ Exit:
             return true;
         }
 
-
         static void Main()
         {
             int result;
@@ -167,31 +160,90 @@ Exit:
             {
                 Console.Clear();
                 isCodecLoaded = CheckCodec(codecPath);
-                Console.WriteLine($"Select Mode\n1. Encode\n2. Decode");
-                WriteWithColor("3. Load Encoding Format", LMED, true);
+                Console.WriteLine($"Select Mode");
+                WriteWithColor("1. Encode\n2. Decode\n3. Load Encoding Format", EDLMED, true);
                 Console.WriteLine("4. Create Encoding Format");
-                WriteWithColor("5. Modify Encoding Format\n6. Export Codec", LMED, true);
+                WriteWithColor("5. Modify Encoding Format\n6. Export Codec", EDLMED, true);
                 Console.WriteLine("7. Import Codec");
-                WriteWithColor("8. Delete Codec", LMED, true);
+                WriteWithColor("8. Delete Codec", EDLMED, true);
                 Console.Write("\nChoose an option: ");
                 int.TryParse(Console.ReadLine(), out result);
                 Console.Clear();
                 switch (result)
                 {
-                    #region "TODO Encode/Decode"
+                    #region "Encode"
                     case 1:
-                    case 2:
-                        if (!isCodecLoaded)
+                        if (EDLMED != ConsoleColor.DarkGray)
                         {
-                            Console.Write("Choose an encoding format before!\n\nType 0 to create a new encoding format, Type 1 to load an existing codec or press enter to restart the program: ");
-                            string reply = Console.ReadLine();
-                            if (reply == "0") { goto case 4; } else if (reply == "1") { goto case 3; } else result = 0;
+                            if (isCodecLoaded)
+                            {
+                                JSONNode codec = JSONNode.Parse(File.ReadAllText(codecPath));
+                                List<string> normalChar = new List<string>();
+                                List<string> encodedValue = new List<string>();
+                                foreach (KeyValuePair<string, JSONNode> keyValuePairs in codec)
+                                {
+                                    normalChar.Add(keyValuePairs.Key);
+                                    encodedValue.Add(keyValuePairs.Value);
+                                }
+                                Console.Write("Type here the text that you want to encode, the program will accept user input until you write ");
+                                WriteWithColor("ENCODE\n", ConsoleColor.Green, true);
+                                string textToEncode = string.Empty;
+                                string encoderLine;
+                                do
+                                {
+                                    encoderLine = Console.ReadLine();
+                                    textToEncode += encoderLine + Environment.NewLine;
+                                } while (encoderLine != "ENCODE");
+                                textToEncode = textToEncode.Remove(textToEncode.Length - 8, 8); //remove ENCODE and NewLine from string
+                                if (textToEncode.Length != 0)
+                                {
+
+                                    List<string> stringChars = new List<string>();
+                                    foreach (char c in textToEncode)
+                                    {
+                                        stringChars.Add(c.ToString());
+                                    }
+
+                                    for (int i = 0; i < stringChars.Count; i++)
+                                    {
+                                        int charIndex = normalChar.IndexOf(stringChars[i]);
+                                        if (charIndex != -1)
+                                        {
+                                            stringChars[i] = encodedValue[charIndex];
+                                        }
+                                    }
+
+                                    string encodedText = string.Empty;
+                                    foreach (string stringChar in stringChars)
+                                    {
+                                        encodedText += stringChar;
+                                    }
+
+                                    Console.WriteLine("\n\nEncoded Result:\n" + encodedText);
+                                    Console.ReadKey();
+                                }
+                                else
+                                {
+                                    WriteWithColor("You cannot encode the \"nothing\"", ConsoleColor.DarkYellow, true);
+                                    Sleep(1500);
+                                }
+                            }
+                            else
+                            {
+                                WriteWithColor("Select a codec first!", ConsoleColor.Yellow, true);
+                                Sleep(1500);
+                            }
                         }
+                        result = 0;
+                        break;
+                    #endregion
+                    #region "Decode"
+                    case 2:
                         throw new NotImplementedException();
                     #endregion
                     #region "Load Codec"
                     case 3:
-                        if (LMED != ConsoleColor.DarkGray) codecPath = ChooseCodec();
+                        if (EDLMED != ConsoleColor.DarkGray) codecPath = ChooseCodec();
                         result = 0;
                         break;
                     #endregion
@@ -275,19 +327,18 @@ Exit:
                             if (File.Exists(filePath))
                             {
                                 Console.Write($"File {filePath.Replace(Environment.CurrentDirectory, null).Replace(".json", null)} already exists. Do you want to overwrite it? (Y/n): ");
-                                if (Console.ReadLine().ToUpper() == "N") goto skipIt;
+                                if (Console.ReadLine().ToUpper() == "N") goto default;
                             }
                             CreateJSONCodec(filePath, chars, encodedChars);
                             Console.Write("\nFile saved successfully, do you want to load it? (y/N): ");
                             if (Console.ReadLine().ToUpper() == "Y") codecPath = filePath;
                         }
-skipIt:
                         result = 0;
                         break;
                     #endregion
                     #region "Modify Codec"
                     case 5:
-                        if (LMED != ConsoleColor.DarkGray)
+                        if (EDLMED != ConsoleColor.DarkGray)
                         {
                             if (isCodecLoaded)
                             {
@@ -302,7 +353,8 @@ skipIt:
                                     modifiedChars.Add(keyValuePairs.Value);
                                 }
                                 bool restartModify;
-                                do{
+                                do
+                                {
                                     restartModify = false;
                                     Console.Clear();
                                     Console.Write("Hi, to modify an encoding format you need to follow these rules:\nThe text format must be the following: ");
@@ -435,7 +487,7 @@ skipIt:
                                                     if (Console.ReadLine().ToUpper() == "N") codecPath = "";
                                                     break;
                                                 case 2: restartModify = true; break;
-                                                case 3: goto skipIt;
+                                                case 3: goto default;
                                                 default: redo = true; break;
                                             }
                                         } while (redo);
@@ -445,7 +497,7 @@ skipIt:
                             else
                             {
                                 WriteWithColor("Select a codec first!", ConsoleColor.Yellow, true);
-                                System.Threading.Thread.Sleep(1500);
+                                Sleep(1500);
                             }
 
                         }
@@ -454,7 +506,7 @@ skipIt:
                     #endregion
                     #region "Export Codec"
                     case 6:
-                        if (LMED != ConsoleColor.DarkGray)
+                        if (EDLMED != ConsoleColor.DarkGray)
                         {
                             string codec_6 = ChooseCodec();
                             if (codec_6 != string.Empty)
@@ -472,7 +524,7 @@ skipIt:
                                     reply_6 = Console.ReadLine();
                                     switch (reply_6)
                                     {
-                                        case "ABORT": goto skipIt;
+                                        case "ABORT": goto default;
                                         case "1":
                                             newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                                             exportedMessage = "Codec successfully exported in Documents";
@@ -500,7 +552,7 @@ skipIt:
                                 if (File.Exists(newExportedFilePath))
                                 {
                                     Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
-                                    if (Console.ReadLine().ToUpper() == "N") goto skipIt;
+                                    if (Console.ReadLine().ToUpper() == "N") goto default;
                                 }
                                 try
                                 {
@@ -510,13 +562,13 @@ skipIt:
                                 {
                                     Console.Clear();
                                     WriteWithColor("I can't save that file there, try restart me as an administrator", ConsoleColor.DarkRed, true);
-                                    System.Threading.Thread.Sleep(2000);
-                                    goto skipIt;
+                                    Sleep(2000);
+                                    goto default;
                                 }
 
                                 Console.Clear();
-                                Console.WriteLine(exportedMessage);
-                                System.Threading.Thread.Sleep(1000);
+                                WriteWithColor(exportedMessage, ConsoleColor.Green, true);
+                                Sleep(1000);
                             }
                         }
                         result = 0;
@@ -534,7 +586,7 @@ skipIt:
                             WriteWithColor("ABORT", ConsoleColor.DarkRed);
                             Console.Write(": ");
                             importFilePath = Console.ReadLine().Replace("\"", null);
-                            if (importFilePath == string.Empty || importFilePath == "ABORT") goto skipIt;
+                            if (importFilePath == string.Empty || importFilePath == "ABORT") goto default;
                             Console.Clear();
                             if (importFilePath.Contains("/") || importFilePath.Contains("\\")) isValid = IsValidCodec(importFilePath, true);
                             else WriteWithColor("Insert a valid file path\n", ConsoleColor.DarkYellow, true);
@@ -549,7 +601,7 @@ skipIt:
                             Console.Write(" already exists, do you want to ");
                             WriteWithColor("overwrite", ConsoleColor.Red);
                             Console.Write(" it? (Y/n): ");
-                            if (Console.ReadLine().ToUpper() == "N") goto skipIt;
+                            if (Console.ReadLine().ToUpper() == "N") goto default;
                         }
                         File.Copy(importFilePath, newFilePath, true);
                         WriteWithColor($"\nSuccessfully imported {codecName}", ConsoleColor.Green, true);
@@ -560,7 +612,7 @@ skipIt:
                     #endregion
                     #region "Delete Codec"
                     case 8:
-                        if (LMED != ConsoleColor.DarkGray)
+                        if (EDLMED != ConsoleColor.DarkGray)
                         {
                             for (int i = 0; i < Console.WindowWidth / 2 - 4; i++)
                             {
