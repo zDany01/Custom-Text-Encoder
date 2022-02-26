@@ -212,15 +212,20 @@ Exit:
                                             stringChars[i] = encodedValue[charIndex];
                                         }
                                     }
-
                                     string encodedText = string.Empty;
                                     foreach (string stringChar in stringChars)
                                     {
                                         encodedText += stringChar;
                                     }
-
-                                    Console.WriteLine("\n\nEncoded Result:\n" + encodedText);
-                                    Console.ReadKey();
+                                    Console.Clear();
+                                    Console.WriteLine($"{textToEncode}has been encoded to:\n{encodedText}\n");
+                                    Console.Write("Do you want to export it? (y/N): ");
+                                    if (Console.ReadLine().ToUpper() == "Y")
+                                    {
+                                        File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\exported.txt", encodedText); //TODO: It's going to change when starting optimization
+                                        WriteWithColor("File successfully exported on Desktop", ConsoleColor.Green, true);
+                                        Sleep(1500);
+                                    }
                                 }
                                 else
                                 {
@@ -239,7 +244,62 @@ Exit:
                     #endregion
                     #region "Decode"
                     case 2:
-                        throw new NotImplementedException();
+                        if (EDLMED != ConsoleColor.DarkGray)
+                        {
+                            if (isCodecLoaded)
+                            {
+                                JSONNode codec = JSONNode.Parse(File.ReadAllText(codecPath));
+                                List<string> normalChar = new List<string>();
+                                List<string> encodedValue = new List<string>();
+                                foreach(KeyValuePair<string, JSONNode> keyValuePair in codec)
+                                {
+                                    normalChar.Add(keyValuePair.Key);
+                                    encodedValue.Add(keyValuePair.Value);
+                                }
+                                Console.Write("Type here the text that you want to decode, the program will accept user input until you write ");
+                                WriteWithColor("DECODE\n", ConsoleColor.Green, true);
+                                string textToDecode = string.Empty;
+                                string decoderLine;
+                                do
+                                {
+                                    decoderLine = Console.ReadLine();
+                                    textToDecode += decoderLine + Environment.NewLine;
+                                } while (decoderLine != "DECODE");
+
+                                string DecodedText = textToDecode = textToDecode.Remove(textToDecode.Length - 8, 8); //remove DECODE and NewLine from string
+                                if (textToDecode.Length != 0)
+                                {
+                                    for (int i = 0; i < encodedValue.Count; i++)
+                                    {
+                                        if (textToDecode.Contains(encodedValue[i]))
+                                        {
+                                            DecodedText = DecodedText.Replace(encodedValue[i], normalChar[i]);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    WriteWithColor("You cannot encode the \"nothing\"", ConsoleColor.DarkYellow, true);
+                                    Sleep(1500);
+                                }
+                                Console.Clear();
+                                Console.WriteLine($"{textToDecode}has been encoded to:\n{DecodedText}\n");
+                                Console.Write("Do you want to export it? (y/N): ");
+                                if (Console.ReadLine().ToUpper() == "Y")
+                                {
+                                    File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\exported.txt", DecodedText); //TODO: It's going to change when starting optimization
+                                    WriteWithColor("File successfully exported on Desktop", ConsoleColor.Green, true);
+                                    Sleep(1500);
+                                }
+                            }
+                            else
+                            {
+                                WriteWithColor("Select a codec first!", ConsoleColor.Yellow, true);
+                                Sleep(1500);
+                            }
+                        }
+                        result = 0;
+                        break;
                     #endregion
                     #region "Load Codec"
                     case 3:
