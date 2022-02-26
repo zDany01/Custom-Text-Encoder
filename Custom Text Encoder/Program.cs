@@ -64,7 +64,7 @@ namespace Custom_Text_Encoder
                 key.Add(keyValuePair.Key);
                 value.Add(keyValuePair.Value);
             }
-        } //TODO: Rework this in optimization
+        }
 
         static void CreateJSONCodec(string filePath, List<string> chars, List<string> encodedChars)
         {
@@ -75,6 +75,128 @@ namespace Custom_Text_Encoder
             }
             File.WriteAllText(filePath, file.AsObject.ToString(0)); //Questo ToString() non è quello di Microsoft, è una funzione stessa della libreria SimpleJSON, il numero indica se usare la formattazione(mantenere gli spazi)
 
+        }
+
+        static bool ExportCodec(string codec)
+        {
+            string reply, newExportedFilePath, exportedMessage = newExportedFilePath = string.Empty;
+            do
+            {
+                Console.Clear();
+                Console.WriteLine("Where do you want to export this file?\n1. Documents folder\n2. Desktop\n3. User folder\n4. Custom path\n");
+                Console.Write("Choose or type ");
+                WriteWithColor("ABORT", ConsoleColor.DarkRed);
+                Console.Write(": ");
+                reply = Console.ReadLine();
+                switch (reply)
+                {
+                    case "ABORT": return false;
+                    case "1":
+                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                        exportedMessage = "Codec successfully exported in Documents";
+                        break;
+                    case "2":
+                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                        exportedMessage = "Codec successfully exported on Desktop";
+                        break;
+                    case "3":
+                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                        exportedMessage = "Codec successfully exported in User folder";
+                        break;
+                    case "4":
+                        Console.Write("Type here the custom directory path: ");
+                        newExportedFilePath = Console.ReadLine().Replace('/', '\\');
+                        if (!Directory.Exists(newExportedFilePath)) Directory.CreateDirectory(newExportedFilePath);
+                        if (newExportedFilePath.EndsWith("\\")) newExportedFilePath = newExportedFilePath.Remove(newExportedFilePath.Length - 1, 1);
+                        exportedMessage = $"Codec successfully exported in {newExportedFilePath.Remove(0, newExportedFilePath.LastIndexOf("\\") + 1)}";
+                        break;
+                    default: reply = "Why do you want to restart this?"; break;
+                }
+            } while (reply == "Why do you want to restart this?");
+
+            newExportedFilePath +=  "\\" + codec.Replace(Environment.CurrentDirectory, null);
+            if (File.Exists(newExportedFilePath))
+            {
+                Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
+                if (Console.ReadLine().ToUpper() == "N") return false;
+            }
+            try
+            {
+                File.Copy(codec, newExportedFilePath, true);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.Clear();
+                WriteWithColor("I can't save that file there, try restart me as an administrator", ConsoleColor.DarkRed, true);
+                Sleep(2000);
+                return false;
+            }
+
+            Console.Clear();
+            WriteWithColor(exportedMessage, ConsoleColor.Green, true);
+            Sleep(1000);
+            return true;
+        }
+
+        static bool ExportFile(string fileContents)
+        {
+            string reply, newExportedFilePath, exportedMessage = newExportedFilePath = string.Empty;
+            do
+            {
+                Console.Clear();
+                Console.WriteLine("Where do you want to export this file?\n1. Documents folder\n2. Desktop\n3. User folder\n4. Custom path\n");
+                Console.Write("Choose or type ");
+                WriteWithColor("ABORT", ConsoleColor.DarkRed);
+                Console.Write(": ");
+                reply = Console.ReadLine();
+                switch (reply)
+                {
+                    case "ABORT": return false;
+                    case "1":
+                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                        exportedMessage = "File successfully exported in Documents";
+                        break;
+                    case "2":
+                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                        exportedMessage = "File successfully exported on Desktop";
+                        break;
+                    case "3":
+                        newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                        exportedMessage = "File successfully exported in User folder";
+                        break;
+                    case "4":
+                        Console.Write("Type here the custom directory path: ");
+                        newExportedFilePath = Console.ReadLine().Replace('/', '\\');
+                        if (!Directory.Exists(newExportedFilePath)) Directory.CreateDirectory(newExportedFilePath);
+                        if (newExportedFilePath.EndsWith("\\")) newExportedFilePath = newExportedFilePath.Remove(newExportedFilePath.Length - 1, 1);
+                        exportedMessage = $"File successfully exported in {newExportedFilePath.Remove(0, newExportedFilePath.LastIndexOf("\\") + 1)}";
+                        break;
+                    default: reply = "Why do you want to restart this?"; break;
+                }
+            } while (reply == "Why do you want to restart this?");
+            Console.Write("Insert filename: "); 
+            newExportedFilePath += "\\" + RemoveIllegalChar(Console.ReadLine() + ".txt");
+            if (File.Exists(newExportedFilePath))
+            {
+                Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
+                if (Console.ReadLine().ToUpper() == "N") return false;
+            }
+            try
+            {
+                File.WriteAllText(newExportedFilePath, fileContents);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.Clear();
+                WriteWithColor("I can't save that file there, try restart me as an administrator", ConsoleColor.DarkRed, true);
+                Sleep(2000);
+                return false;
+            }
+
+            Console.Clear();
+            WriteWithColor(exportedMessage, ConsoleColor.Green, true);
+            Sleep(1000);
+            return true;
         }
 
         static string ChooseCodec(bool onlyCheck = false)
@@ -220,9 +342,10 @@ Exit:
                                     Console.Write("Do you want to export it? (y/N): ");
                                     if (Console.ReadLine().ToUpper() == "Y")
                                     {
-                                        File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\exported.txt", encodedText); //TODO: It's going to change when starting optimization
+                                        if (!ExportFile(encodedText)) goto default;
+                                        /*File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\exported.txt", encodedText); //TODO: It's going to change when starting optimization
                                         WriteWithColor("File successfully exported on Desktop", ConsoleColor.Green, true);
-                                        Sleep(1500);
+                                        Sleep(1500);*/
                                     }
                                 }
                                 else
@@ -265,14 +388,14 @@ Exit:
                                     textToDecode += decoderLine + Environment.NewLine;
                                 } while (decoderLine != "DECODE");
 
-                                string DecodedText = textToDecode = textToDecode.Remove(textToDecode.Length - 8, 8); //remove DECODE and NewLine from string
+                                string decodedText = textToDecode = textToDecode.Remove(textToDecode.Length - 8, 8); //remove DECODE and NewLine from string
                                 if (textToDecode.Length != 0)
                                 {
                                     for (int i = 0; i < encodedValue.Count; i++)
                                     {
                                         if (textToDecode.Contains(encodedValue[i]))
                                         {
-                                            DecodedText = DecodedText.Replace(encodedValue[i], normalChar[i]);
+                                            decodedText = decodedText.Replace(encodedValue[i], normalChar[i]);
                                         }
                                     }
                                 }
@@ -282,13 +405,14 @@ Exit:
                                     Sleep(1500);
                                 }
                                 Console.Clear();
-                                Console.WriteLine($"{textToDecode}has been encoded to:\n{DecodedText}\n");
+                                Console.WriteLine($"{textToDecode}has been encoded to:\n{decodedText}\n");
                                 Console.Write("Do you want to export it? (y/N): ");
                                 if (Console.ReadLine().ToUpper() == "Y")
                                 {
-                                    File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\exported.txt", DecodedText); //TODO: It's going to change when starting optimization
+                                    if (!ExportFile(decodedText)) goto default;
+                                    /*File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\exported.txt", DecodedText); //TODO: It's going to change when starting optimization
                                     WriteWithColor("File successfully exported on Desktop", ConsoleColor.Green, true);
-                                    Sleep(1500);
+                                    Sleep(1500);*/
                                 }
                             }
                             else
@@ -570,7 +694,8 @@ Exit:
                             string codec_6 = ChooseCodec();
                             if (codec_6 != string.Empty)
                             {
-                                string reply_6;
+                                if (!ExportCodec(codec_6)) { goto default; }
+                                /*string reply_6;
                                 string newExportedFilePath = "PGRARPT";
                                 string exportedMessage = string.Empty;
                                 do
@@ -627,7 +752,7 @@ Exit:
 
                                 Console.Clear();
                                 WriteWithColor(exportedMessage, ConsoleColor.Green, true);
-                                Sleep(1000);
+                                Sleep(1000);*/
                             }
                         }
                         result = 0;
@@ -691,7 +816,7 @@ Exit:
                         }
                         result = 0;
                         break;
-                    #endregion
+                    #endregion:
                     default: result = 0; break;
                 }
             } while (result == 0);
