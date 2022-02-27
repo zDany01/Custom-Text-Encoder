@@ -299,14 +299,6 @@ Exit:
                         {
                             if (isCodecLoaded)
                             {
-                                /*JSONNode codec = JSONNode.Parse(File.ReadAllText(codecPath));
-                                List<string> normalChar = new List<string>();
-                                List<string> encodedValue = new List<string>();
-                                foreach (KeyValuePair<string, JSONNode> keyValuePairs in codec)
-                                {
-                                    normalChar.Add(keyValuePairs.Key);
-                                    encodedValue.Add(keyValuePairs.Value);
-                                }*/ //Backup
                                 SetupLists(out List<string> normalChar, out List<string> encodedValue);
                                 Console.Write("Type here the text that you want to encode, the program will accept user input until you write ");
                                 WriteWithColor("ENCODE\n", ConsoleColor.Green, true);
@@ -346,9 +338,6 @@ Exit:
                                     if (Console.ReadLine().ToUpper() == "Y")
                                     {
                                         if (!ExportFile(encodedText)) goto default;
-                                        /*File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\exported.txt", encodedText); //TODO: It's going to change when starting optimization
-                                        WriteWithColor("File successfully exported on Desktop", ConsoleColor.Green, true);
-                                        Sleep(1500);*/
                                     }
                                 }
                                 else
@@ -372,14 +361,6 @@ Exit:
                         {
                             if (isCodecLoaded)
                             {
-                                /*JSONNode codec = JSONNode.Parse(File.ReadAllText(codecPath));
-                                List<string> normalChar = new List<string>();
-                                List<string> encodedValue = new List<string>();
-                                foreach(KeyValuePair<string, JSONNode> keyValuePair in codec)
-                                {
-                                    normalChar.Add(keyValuePair.Key);
-                                    encodedValue.Add(keyValuePair.Value);
-                                }*/ //Backup
                                 SetupLists(out List<string> normalChar, out List<string> encodedValue);
                                 Console.Write("Type here the text that you want to decode, the program will accept user input until you write ");
                                 WriteWithColor("DECODE\n", ConsoleColor.Green, true);
@@ -413,9 +394,6 @@ Exit:
                                 if (Console.ReadLine().ToUpper() == "Y")
                                 {
                                     if (!ExportFile(decodedText)) goto default;
-                                    /*File.WriteAllText(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory) + "\\exported.txt", DecodedText); //TODO: It's going to change when starting optimization
-                                    WriteWithColor("File successfully exported on Desktop", ConsoleColor.Green, true);
-                                    Sleep(1500);*/
                                 }
                             }
                             else
@@ -529,14 +507,6 @@ Exit:
                             if (isCodecLoaded)
                             {
                                 string modifyLine;
-                                /*List<string> codecChars = new List<string>();
-                                List<string> modifiedChars = new List<string>();
-                                JSONNode jsonCodec = JSONNode.Parse(File.ReadAllText(codecPath));
-                                foreach (KeyValuePair<string, JSONNode> keyValuePairs in jsonCodec)
-                                {
-                                    codecChars.Add(keyValuePairs.Key);
-                                    modifiedChars.Add(keyValuePairs.Value);
-                                } */ //Backup
                                 SetupLists(out List<string> codecChars, out List<string> modifiedChars);
                                 bool restartModify;
                                 do
@@ -697,65 +667,7 @@ Exit:
                             string codec_6 = ChooseCodec();
                             if (codec_6 != string.Empty)
                             {
-                                if (!ExportCodec(codec_6)) { goto default; }
-                                /*string reply_6;
-                                string newExportedFilePath = "PGRARPT";
-                                string exportedMessage = string.Empty;
-                                do
-                                {
-                                    Console.Clear();
-                                    Console.WriteLine("Where do you want to export this file?\n1. Documents folder\n2. Desktop\n3. User folder\n4. Custom path\n");
-                                    Console.Write("Choose or type ");
-                                    WriteWithColor("ABORT", ConsoleColor.DarkRed);
-                                    Console.Write(": ");
-                                    reply_6 = Console.ReadLine();
-                                    switch (reply_6)
-                                    {
-                                        case "ABORT": goto default;
-                                        case "1":
-                                            newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                                            exportedMessage = "Codec successfully exported in Documents";
-                                            break;
-                                        case "2":
-                                            newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                                            exportedMessage = "Codec successfully exported on Desktop";
-                                            break;
-                                        case "3":
-                                            newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                                            exportedMessage = "Codec successfully exported in User folder";
-                                            break;
-                                        case "4":
-                                            Console.Write("Type here the custom directory path: ");
-                                            newExportedFilePath = Console.ReadLine().Replace('/', '\\');
-                                            if (!Directory.Exists(newExportedFilePath)) Directory.CreateDirectory(newExportedFilePath);
-                                            if (newExportedFilePath.EndsWith("\\")) newExportedFilePath = newExportedFilePath.Remove(newExportedFilePath.Length - 1, 1);
-                                            exportedMessage = $"Codec successfully exported in {newExportedFilePath.Remove(0, newExportedFilePath.LastIndexOf("\\") + 1)}";
-                                            break;
-                                        default: reply_6 = "PGRARPT"; break;
-                                    }
-                                } while (reply_6 == "PGRARPT");
-
-                                newExportedFilePath += "\\" + codec_6.Replace(Environment.CurrentDirectory, null);
-                                if (File.Exists(newExportedFilePath))
-                                {
-                                    Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
-                                    if (Console.ReadLine().ToUpper() == "N") goto default;
-                                }
-                                try
-                                {
-                                    File.Copy(codec_6, newExportedFilePath, true);
-                                }
-                                catch (UnauthorizedAccessException)
-                                {
-                                    Console.Clear();
-                                    WriteWithColor("I can't save that file there, try restart me as an administrator", ConsoleColor.DarkRed, true);
-                                    Sleep(2000);
-                                    goto default;
-                                }
-
-                                Console.Clear();
-                                WriteWithColor(exportedMessage, ConsoleColor.Green, true);
-                                Sleep(1000);*/
+                                if (!ExportCodec(codec_6)) goto default;
                             }
                         }
                         result = 0;
