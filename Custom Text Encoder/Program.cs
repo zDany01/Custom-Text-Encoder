@@ -80,7 +80,7 @@ namespace Custom_Text_Encoder
 
         }
 
-        static bool ExportCodec(string codec)
+        static void ExportCodec(string codec)
         {
             string reply, newExportedFilePath, exportedMessage = newExportedFilePath = string.Empty;
             do
@@ -93,7 +93,7 @@ namespace Custom_Text_Encoder
                 reply = Console.ReadLine();
                 switch (reply)
                 {
-                    case "ABORT": return false;
+                    case "ABORT": return;
                     case "1":
                         newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                         exportedMessage = "Codec successfully exported in Documents";
@@ -121,7 +121,7 @@ namespace Custom_Text_Encoder
             if (File.Exists(newExportedFilePath))
             {
                 Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
-                if (Console.ReadLine().ToUpper() == "N") return false;
+                if (Console.ReadLine().ToUpper() == "N") return;
             }
             try
             {
@@ -132,16 +132,15 @@ namespace Custom_Text_Encoder
                 Console.Clear();
                 WriteWithColor("I can't save that file there, try restart me as an administrator", ConsoleColor.DarkRed, true);
                 Sleep(2000);
-                return false;
+                return;
             }
 
             Console.Clear();
             WriteWithColor(exportedMessage, ConsoleColor.Green, true);
             Sleep(1000);
-            return true;
         }
 
-        static bool ExportFile(string fileContents)
+        static void ExportFile(string fileContents)
         {
             string reply, newExportedFilePath, exportedMessage = newExportedFilePath = string.Empty;
             do
@@ -154,7 +153,7 @@ namespace Custom_Text_Encoder
                 reply = Console.ReadLine();
                 switch (reply)
                 {
-                    case "ABORT": return false;
+                    case "ABORT": return;
                     case "1":
                         newExportedFilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                         exportedMessage = "File successfully exported in Documents";
@@ -182,7 +181,7 @@ namespace Custom_Text_Encoder
             if (File.Exists(newExportedFilePath))
             {
                 Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
-                if (Console.ReadLine().ToUpper() == "N") return false;
+                if (Console.ReadLine().ToUpper() == "N") return;
             }
             try
             {
@@ -193,13 +192,12 @@ namespace Custom_Text_Encoder
                 Console.Clear();
                 WriteWithColor("I can't save that file there, try restart me as an administrator", ConsoleColor.DarkRed, true);
                 Sleep(2000);
-                return false;
+                return;
             }
 
             Console.Clear();
             WriteWithColor(exportedMessage, ConsoleColor.Green, true);
             Sleep(1000);
-            return true;
         }
 
         static string ChooseCodec(bool onlyCheck = false)
@@ -295,6 +293,43 @@ Exit:
             }
         }
 
+        static bool FileOrTextInput(string keywordToStop, out string textTo, out List<string> key, out List<string> value)
+        {
+            SetupLists(out key, out value);
+            textTo = string.Empty;
+            Console.Write("Do you want to import text from a file? (y/N): ");
+            if (Console.ReadLine().ToUpper() == "Y")
+            {
+                Console.Clear();
+                string filePath = RequestFile();
+                if (filePath == bool.FalseString) return false;
+                textTo = File.ReadAllText(filePath);
+            }
+            else
+            {
+                Console.Clear();
+                Console.Write("Type here the text that you want to encode, the program will accept user input until you write ");
+                WriteWithColor($"{keywordToStop}", ConsoleColor.Green);
+                Console.Write(" or ");
+                WriteWithColor("ABORT\n",ConsoleColor.Red,true);
+                string line;
+                do
+                {
+                    line = Console.ReadLine();
+                    textTo += line + Environment.NewLine;
+                } while (line != keywordToStop && line != "ABORT");
+                if (line == "ABORT") return false;
+                textTo = textTo.Remove(textTo.Length - 8, 8); //remove ENCODE and NewLine from string
+            }
+            if (textTo.Length == 0)
+            {
+                WriteWithColor("You cannot encode the \"nothing\"", ConsoleColor.DarkYellow, true);
+                Sleep(1500);
+                return false;
+            }
+            else return true;
+        }
+
         static void Main()
         {
             int result;
@@ -319,52 +354,32 @@ Exit:
                         {
                             if (isCodecLoaded)
                             {
-                                SetupLists(out List<string> normalChar, out List<string> encodedValue);
-                                Console.Write("Type here the text that you want to encode, the program will accept user input until you write ");
-                                WriteWithColor("ENCODE\n", ConsoleColor.Green, true);
-                                string textToEncode = string.Empty;
-                                string encoderLine;
-                                do
-                                {
-                                    encoderLine = Console.ReadLine();
-                                    textToEncode += encoderLine + Environment.NewLine;
-                                } while (encoderLine != "ENCODE");
-                                textToEncode = textToEncode.Remove(textToEncode.Length - 8, 8); //remove ENCODE and NewLine from string
-                                if (textToEncode.Length != 0)
-                                {
+                                if (!FileOrTextInput("ENCODE", out string textToEncode, out List<string> normalChar, out List<string> encodedValue)) goto default;
 
-                                    List<string> stringChars = new List<string>();
-                                    foreach (char c in textToEncode)
-                                    {
-                                        stringChars.Add(c.ToString());
-                                    }
+                                List<string> stringChars = new List<string>();
+                                foreach (char c in textToEncode)
+                                {
+                                    stringChars.Add(c.ToString());
+                                }
 
-                                    for (int i = 0; i < stringChars.Count; i++)
+                                for (int i = 0; i < stringChars.Count; i++)
+                                {
+                                    int charIndex = normalChar.IndexOf(stringChars[i]);
+                                    if (charIndex != -1)
                                     {
-                                        int charIndex = normalChar.IndexOf(stringChars[i]);
-                                        if (charIndex != -1)
-                                        {
-                                            stringChars[i] = encodedValue[charIndex];
-                                        }
-                                    }
-                                    string encodedText = string.Empty;
-                                    foreach (string stringChar in stringChars)
-                                    {
-                                        encodedText += stringChar;
-                                    }
-                                    Console.Clear();
-                                    Console.WriteLine($"{textToEncode}has been encoded to:\n{encodedText}\n");
-                                    Console.Write("Do you want to export it? (y/N): ");
-                                    if (Console.ReadLine().ToUpper() == "Y")
-                                    {
-                                        if (!ExportFile(encodedText)) goto default;
+                                        stringChars[i] = encodedValue[charIndex];
                                     }
                                 }
-                                else
+                                string encodedText = string.Empty;
+                                foreach (string stringChar in stringChars)
                                 {
-                                    WriteWithColor("You cannot encode the \"nothing\"", ConsoleColor.DarkYellow, true);
-                                    Sleep(1500);
+                                    encodedText += stringChar;
                                 }
+                                Console.Clear();
+                                if (!textToEncode.EndsWith("\n")) textToEncode += '\n';
+                                Console.WriteLine($"{textToEncode}has been encoded to:\n{encodedText}\n");
+                                Console.Write("Do you want to export it? (y/N): ");
+                                if (Console.ReadLine().ToUpper() == "Y") ExportFile(encodedText);
                             }
                             else
                             {
@@ -381,40 +396,16 @@ Exit:
                         {
                             if (isCodecLoaded)
                             {
-                                SetupLists(out List<string> normalChar, out List<string> encodedValue);
-                                Console.Write("Type here the text that you want to decode, the program will accept user input until you write ");
-                                WriteWithColor("DECODE\n", ConsoleColor.Green, true);
-                                string textToDecode = string.Empty;
-                                string decoderLine;
-                                do
-                                {
-                                    decoderLine = Console.ReadLine();
-                                    textToDecode += decoderLine + Environment.NewLine;
-                                } while (decoderLine != "DECODE");
-
-                                string decodedText = textToDecode = textToDecode.Remove(textToDecode.Length - 8, 8); //remove DECODE and NewLine from string
-                                if (textToDecode.Length != 0)
-                                {
+                                if (!FileOrTextInput("DECODE", out string textToDecode, out List<string> normalChar, out List<string> encodedValue)) goto default;
+                                string decodedText = textToDecode;
                                     for (int i = 0; i < encodedValue.Count; i++)
                                     {
-                                        if (textToDecode.Contains(encodedValue[i]))
-                                        {
-                                            decodedText = decodedText.Replace(encodedValue[i], normalChar[i]);
-                                        }
+                                        if (textToDecode.Contains(encodedValue[i])) decodedText = decodedText.Replace(encodedValue[i], normalChar[i]);
                                     }
-                                }
-                                else
-                                {
-                                    WriteWithColor("You cannot encode the \"nothing\"", ConsoleColor.DarkYellow, true);
-                                    Sleep(1500);
-                                }
                                 Console.Clear();
                                 Console.WriteLine($"{textToDecode}has been encoded to:\n{decodedText}\n");
                                 Console.Write("Do you want to export it? (y/N): ");
-                                if (Console.ReadLine().ToUpper() == "Y")
-                                {
-                                    if (!ExportFile(decodedText)) goto default;
-                                }
+                                if (Console.ReadLine().ToUpper() == "Y") ExportFile(decodedText);
                             }
                             else
                             {
@@ -433,7 +424,6 @@ Exit:
                     #endregion
                     #region "Create Codec"
                     case 4:
-                        Console.Clear();
                         Console.Write("Hi, to create a new encoding format you need to follow these rules:\nThe text format must be the following: ");
                         WriteWithColor('X', ConsoleColor.Yellow);
                         Console.Write('-');
@@ -684,11 +674,8 @@ Exit:
                     case 6:
                         if (EDLMED != ConsoleColor.DarkGray)
                         {
-                            string codec_6 = ChooseCodec();
-                            if (codec_6 != string.Empty)
-                            {
-                                if (!ExportCodec(codec_6)) goto default;
-                            }
+                            string codec = ChooseCodec();
+                            if (codec != string.Empty) ExportCodec(codec);
                         }
                         result = 0;
                         break;
@@ -703,28 +690,6 @@ Exit:
                             if (importFilePath == bool.FalseString) goto default;
                         } while (!IsValidCodec(importFilePath, true));
                         codecName = Path.GetFileNameWithoutExtension(importFilePath);
-                       /* string codecName = "If you see me, there is a bug the program :/\n If you are an user, please open a report on GitHub https://github.com/zDany01/Custom-Text-Encoder/issues"; //:)
-                        string importFilePath = RequestFile();
-                        if (importFilePath != bool.FalseString && IsValidCodec(importFilePath, true)) codecName = Path.GetFileNameWithoutExtension(importFilePath);
-                        else
-                        {
-                            goto default;
-                        }*/ //v1.0
-                        /*bool isValid = false;
-                        string importFilePath;
-                        do
-                        {
-                            Console.WriteLine("To import a file:\n- Write the file path\n- Drag the file in the console window\n");
-                            Console.Write("Write file path here or type ");
-                            WriteWithColor("ABORT", ConsoleColor.DarkRed);
-                            Console.Write(": ");
-                            importFilePath = Console.ReadLine().Replace("\"", null);
-                            if (importFilePath == string.Empty || importFilePath == "ABORT") goto default;
-                            Console.Clear();
-                            if (importFilePath.Contains("/") || importFilePath.Contains("\\")) isValid = IsValidCodec(importFilePath, true);
-                            else WriteWithColor("Insert a valid file path\n", ConsoleColor.DarkYellow, true);
-                            if (isValid) codecName = Path.GetFileNameWithoutExtension(importFilePath);
-                        } while (!isValid);*/
                         Console.Clear();
                         string newFilePath = $"{Environment.CurrentDirectory}\\{codecName}.json";
                         if (File.Exists(newFilePath))
@@ -747,17 +712,11 @@ Exit:
                     case 8:
                         if (EDLMED != ConsoleColor.DarkGray)
                         {
-                            for (int i = 0; i < Console.WindowWidth / 2 - 4; i++)
-                            {
-                                Console.Write(' ');
-                            }
+                            for (int i = 0; i < Console.WindowWidth / 2 - 4; i++) Console.Write(' ');
                             WriteWithColor("WARNING!", ConsoleColor.DarkRed, true);
                             WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 44}}}", "If you choose to delete a Codec, unless you have a backup, you will permanently lost it!"), ConsoleColor.Red, true);
                             WriteWithColor(string.Format($"{{0,{Console.WindowWidth / 2 + 43}}}", "There is no confirmation for deleting files, so choose wisely. if you understood, then"), ConsoleColor.Red, true);
-                            for (int i = 0; i < Console.WindowWidth / 2 - 12; i++)
-                            {
-                                Console.Write(' ');
-                            }
+                            for (int i = 0; i < Console.WindowWidth / 2 - 12; i++) Console.Write(' ');
                             WriteWithColor("Press a key to continue...", ConsoleColor.DarkMagenta, true);
                             Console.ReadKey();
                             string codec_8 = ChooseCodec();

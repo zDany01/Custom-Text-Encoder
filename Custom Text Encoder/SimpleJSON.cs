@@ -39,7 +39,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-
+#pragma warning disable
 namespace SimpleJSON
 {
     public enum JSONNodeType
