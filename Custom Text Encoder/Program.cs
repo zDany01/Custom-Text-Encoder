@@ -62,7 +62,7 @@ namespace Custom_Text_Encoder
             JSONNode json = JSONNode.Parse(File.ReadAllText(codecPath));
             key = new List<string>();
             value = new List<string>();
-            foreach(KeyValuePair<string, JSONNode> keyValuePair in json)
+            foreach (KeyValuePair<string, JSONNode> keyValuePair in json)
             {
                 key.Add(keyValuePair.Key);
                 value.Add(keyValuePair.Value);
@@ -117,7 +117,7 @@ namespace Custom_Text_Encoder
                 }
             } while (reply == "Why do you want to restart this?");
 
-            newExportedFilePath +=  "\\" + codec.Replace(Environment.CurrentDirectory, null);
+            newExportedFilePath += "\\" + codec.Replace(Environment.CurrentDirectory, null);
             if (File.Exists(newExportedFilePath))
             {
                 Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
@@ -177,7 +177,7 @@ namespace Custom_Text_Encoder
                     default: reply = "Why do you want to restart this?"; break;
                 }
             } while (reply == "Why do you want to restart this?");
-            Console.Write("Insert filename: "); 
+            Console.Write("Insert filename: ");
             newExportedFilePath += "\\" + RemoveIllegalChar(Console.ReadLine() + ".txt");
             if (File.Exists(newExportedFilePath))
             {
@@ -273,6 +273,26 @@ Exit:
             Debug.WriteLine($"\u2713{Path.GetFileNameWithoutExtension(filePath)}");
 #endif
             return true;
+        }
+
+        static string RequestFile()
+        {
+            while (true)
+            {
+                Console.WriteLine("To import a file:\n- Write the file path\n- Drag the file in the console window\n");
+                Console.Write("Write file path here or type ");
+                WriteWithColor("ABORT", ConsoleColor.DarkRed);
+                Console.Write(": ");
+                string importFilePath = Console.ReadLine().Replace("\"", null);
+                Console.Clear();
+                if (importFilePath == string.Empty || importFilePath == "ABORT") return bool.FalseString;
+                if (importFilePath.Contains("/") ^ importFilePath.Contains("\\")) return importFilePath;
+                else
+                {
+                    WriteWithColor("Insert a valid file path\n", ConsoleColor.DarkYellow, true);
+                    Sleep(1500);
+                }
+            }
         }
 
         static void Main()
@@ -675,8 +695,22 @@ Exit:
                     #endregion
                     #region "Import Codec"
                     case 7:
-                        bool isValid = false;
                         string codecName = "If you see me, there is a bug the program :/\n If you are an user, please open a report on GitHub https://github.com/zDany01/Custom-Text-Encoder/issues"; //:)
+                        string importFilePath;
+                        do
+                        {
+                            importFilePath = RequestFile();
+                            if (importFilePath == bool.FalseString) goto default;
+                        } while (!IsValidCodec(importFilePath, true));
+                        codecName = Path.GetFileNameWithoutExtension(importFilePath);
+                       /* string codecName = "If you see me, there is a bug the program :/\n If you are an user, please open a report on GitHub https://github.com/zDany01/Custom-Text-Encoder/issues"; //:)
+                        string importFilePath = RequestFile();
+                        if (importFilePath != bool.FalseString && IsValidCodec(importFilePath, true)) codecName = Path.GetFileNameWithoutExtension(importFilePath);
+                        else
+                        {
+                            goto default;
+                        }*/ //v1.0
+                        /*bool isValid = false;
                         string importFilePath;
                         do
                         {
@@ -690,7 +724,7 @@ Exit:
                             if (importFilePath.Contains("/") || importFilePath.Contains("\\")) isValid = IsValidCodec(importFilePath, true);
                             else WriteWithColor("Insert a valid file path\n", ConsoleColor.DarkYellow, true);
                             if (isValid) codecName = Path.GetFileNameWithoutExtension(importFilePath);
-                        } while (!isValid);
+                        } while (!isValid);*/
                         Console.Clear();
                         string newFilePath = $"{Environment.CurrentDirectory}\\{codecName}.json";
                         if (File.Exists(newFilePath))
