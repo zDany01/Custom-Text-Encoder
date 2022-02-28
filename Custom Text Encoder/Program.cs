@@ -77,7 +77,6 @@ namespace Custom_Text_Encoder
                 file.Add(chars[i], encodedChars[i]);
             }
             File.WriteAllText(filePath, file.AsObject.ToString(0)); //Questo ToString() non è quello di Microsoft, è una funzione stessa della libreria SimpleJSON, il numero indica se usare la formattazione(mantenere gli spazi)
-
         }
 
         static void ExportCodec(string codec)
@@ -214,9 +213,12 @@ namespace Custom_Text_Encoder
                 if (writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
                 return false;
             }
-
             JSONNode jsonFile = JSONNode.Parse(fileContents);
+#if DEBUG
             int jsonFileLine = 0;
+#endif
+            List<string> keys = new List<string>();
+            List<string> values = new List<string>();
             foreach (KeyValuePair<string, JSONNode> keyValuePair in jsonFile)
             {
                 if (keyValuePair.Key.Length != 1)
@@ -227,7 +229,42 @@ namespace Custom_Text_Encoder
                     if (writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
                     return false;
                 }
+                else
+                {
+                    keys.Add(keyValuePair.Key);
+                    values.Add(keyValuePair.Value);
+                }
+#if DEBUG
                 jsonFileLine++;
+#endif
+            }
+            bool reoder = false;
+            int maxlenght = values[0].Length;
+            for(int i = 0; i < values.Count; i++)
+            {
+                if(values[i].Length > maxlenght) reoder = true;
+            }
+
+            if (reoder)
+            {
+                bool repeat = false;
+                do
+                {
+                    Console.Clear();
+                    WriteWithColor(Path.GetFileNameWithoutExtension(filePath), ConsoleColor.DarkCyan);
+                    Console.WriteLine(" isn't ordered in the right way.\n1. Fix\n2. Delete\n\nChoose: ");
+                    switch (Console.ReadLine())
+                    {
+                        case "1": repeat = false; break;
+                        case "2":
+                            File.Delete(filePath);
+                            return false;
+                        default: repeat = true; break;
+                    }
+                } while (repeat);
+                OrderLists(ref keys, ref values);
+                CreateJSONCodec(filePath, keys, values);
+                Console.Clear();
             }
 #if DEBUG
             Debug.WriteLine($"\u2713{Path.GetFileNameWithoutExtension(filePath)}");
@@ -328,6 +365,19 @@ Exit:
                 return false;
             }
             else return true;
+        }
+
+        static void OrderLists(ref List<string> key, ref List<string> value)
+        {
+            List<string> orderedValue = value.OrderBy(element => element.Length).ToList();
+            orderedValue.Reverse();
+            List<string> orderedKey = new List<string>();
+            foreach (string item in orderedValue)
+            {
+                orderedKey.Add(key[value.IndexOf(item)]);
+            }
+            key = orderedKey;
+            value = orderedValue;
         }
 
         static void Main()
