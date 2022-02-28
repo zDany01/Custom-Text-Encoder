@@ -80,18 +80,6 @@ namespace Custom_Text_Encoder
 
         }
 
-        static void CodecOverview(List<string> chars, List<string> encodedChars)
-        {
-            Console.Clear();
-            Console.WriteLine("Codec overview: ");
-            for (int i = 0; i < chars.Count; i++)
-            {
-                WriteWithColor(chars[i], ConsoleColor.Blue);
-                Console.Write(" => ");
-                WriteWithColor(encodedChars[i], ConsoleColor.Cyan, true);
-            }
-        }
-
         static void ExportCodec(string codec)
         {
             string reply, newExportedFilePath, exportedMessage = newExportedFilePath = string.Empty;

@@ -55,6 +55,6 @@ using System.Runtime.InteropServices;
 <#+
     int major = 0;
     int minor = 10;
-    int revision = 0;
+    int revision = 1;
     int build = 0;
 #>
