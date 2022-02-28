@@ -200,6 +200,41 @@ namespace Custom_Text_Encoder
             Sleep(1000);
         }
 
+        static bool IsValidCodec(string filePath, bool writeInvalid = false)
+        {
+            if (!File.Exists(filePath))
+            {
+                if (writeInvalid) WriteWithColor("The specified file doesn't exists.\n", ConsoleColor.DarkYellow, true);
+                return false;
+            }
+
+            string fileContents = File.ReadAllText(filePath);
+            if (string.IsNullOrEmpty(fileContents) || fileContents.Count(_ => (_ == '{')) != 1)
+            {
+                if (writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
+                return false;
+            }
+
+            JSONNode jsonFile = JSONNode.Parse(fileContents);
+            int jsonFileLine = 0;
+            foreach (KeyValuePair<string, JSONNode> keyValuePair in jsonFile)
+            {
+                if (keyValuePair.Key.Length != 1)
+                {
+#if DEBUG
+                    Debug.WriteLine($"\u2717{keyValuePair.Key} - line {jsonFileLine}");
+#endif
+                    if (writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
+                    return false;
+                }
+                jsonFileLine++;
+            }
+#if DEBUG
+            Debug.WriteLine($"\u2713{Path.GetFileNameWithoutExtension(filePath)}");
+#endif
+            return true;
+        }
+
         static string ChooseCodec(bool onlyCheck = false)
         {
             List<string> codecs = new List<string>();
@@ -236,41 +271,6 @@ namespace Custom_Text_Encoder
             if (onlyCheck) return bool.FalseString;
 Exit:
             return string.Empty;
-        }
-
-        static bool IsValidCodec(string filePath, bool writeInvalid = false)
-        {
-            if (!File.Exists(filePath))
-            {
-                if (writeInvalid) WriteWithColor("The specified file doesn't exists.\n", ConsoleColor.DarkYellow, true);
-                return false;
-            }
-
-            string fileContents = File.ReadAllText(filePath);
-            if (string.IsNullOrEmpty(fileContents) || fileContents.Count(_ => (_ == '{')) > 1)
-            {
-                if (writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
-                return false;
-            }
-
-            JSONNode jsonFile = JSONNode.Parse(fileContents);
-            int jsonFileLine = 0;
-            foreach (KeyValuePair<string, JSONNode> keyValuePair in jsonFile)
-            {
-                if (keyValuePair.Key.Length != 1)
-                {
-#if DEBUG
-                    Debug.WriteLine($"\u2717{keyValuePair.Key} - line {jsonFileLine}");
-#endif
-                    if (writeInvalid) WriteWithColor($"This isn't a valid codec file.\n", ConsoleColor.DarkYellow, true);
-                    return false;
-                }
-                jsonFileLine++;
-            }
-#if DEBUG
-            Debug.WriteLine($"\u2713{Path.GetFileNameWithoutExtension(filePath)}");
-#endif
-            return true;
         }
 
         static string RequestFile()
