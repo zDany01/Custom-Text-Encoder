@@ -14,7 +14,7 @@ namespace Custom_Text_Encoder
     {
         static string codecPath = "";
         static bool isCodecLoaded;
-        static ConsoleColor EDLMED = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
+        static ConsoleColor EDLMEDO = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
 
 
         static void WriteWithColor<T>(T value, ConsoleColor color, bool endLine = false)
@@ -43,7 +43,7 @@ namespace Custom_Text_Encoder
 
         static bool CheckCodec(string filePath)
         {
-            EDLMED = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
+            EDLMEDO = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
             Console.Write("Codec status: ");
             if (File.Exists(filePath))
             {
@@ -78,6 +78,18 @@ namespace Custom_Text_Encoder
             }
             File.WriteAllText(filePath, file.AsObject.ToString(0)); //Questo ToString() non è quello di Microsoft, è una funzione stessa della libreria SimpleJSON, il numero indica se usare la formattazione(mantenere gli spazi)
 
+        }
+
+        static void CodecOverview(List<string> chars, List<string> encodedChars)
+        {
+            Console.Clear();
+            Console.WriteLine("Codec overview: ");
+            for (int i = 0; i < chars.Count; i++)
+            {
+                WriteWithColor(chars[i], ConsoleColor.Blue);
+                Console.Write(" => ");
+                WriteWithColor(encodedChars[i], ConsoleColor.Cyan, true);
+            }
         }
 
         static void ExportCodec(string codec)
@@ -311,7 +323,7 @@ Exit:
                 Console.Write("Type here the text that you want to encode, the program will accept user input until you write ");
                 WriteWithColor($"{keywordToStop}", ConsoleColor.Green);
                 Console.Write(" or ");
-                WriteWithColor("ABORT\n",ConsoleColor.Red,true);
+                WriteWithColor("ABORT\n", ConsoleColor.Red, true);
                 string line;
                 do
                 {
@@ -338,11 +350,11 @@ Exit:
                 Console.Clear();
                 isCodecLoaded = CheckCodec(codecPath);
                 Console.WriteLine($"Select Mode");
-                WriteWithColor("1. Encode\n2. Decode\n3. Load Encoding Format", EDLMED, true);
+                WriteWithColor("1. Encode\n2. Decode\n3. Load Encoding Format", EDLMEDO, true);
                 Console.WriteLine("4. Create Encoding Format");
-                WriteWithColor("5. Modify Encoding Format\n6. Export Codec", EDLMED, true);
+                WriteWithColor("5. Modify Encoding Format\n6. Export Codec", EDLMEDO, true);
                 Console.WriteLine("7. Import Codec");
-                WriteWithColor("8. Delete Codec", EDLMED, true);
+                WriteWithColor("8. Delete Codec\n9. Codec Overview", EDLMEDO, true);
                 Console.Write("\nChoose an option: ");
                 int.TryParse(Console.ReadLine(), out result);
                 Console.Clear();
@@ -350,7 +362,7 @@ Exit:
                 {
                     #region "Encode"
                     case 1:
-                        if (EDLMED != ConsoleColor.DarkGray)
+                        if (EDLMEDO != ConsoleColor.DarkGray)
                         {
                             if (isCodecLoaded)
                             {
@@ -392,16 +404,16 @@ Exit:
                     #endregion
                     #region "Decode"
                     case 2:
-                        if (EDLMED != ConsoleColor.DarkGray)
+                        if (EDLMEDO != ConsoleColor.DarkGray)
                         {
                             if (isCodecLoaded)
                             {
                                 if (!FileOrTextInput("DECODE", out string textToDecode, out List<string> normalChar, out List<string> encodedValue)) goto default;
                                 string decodedText = textToDecode;
-                                    for (int i = 0; i < encodedValue.Count; i++)
-                                    {
-                                        if (textToDecode.Contains(encodedValue[i])) decodedText = decodedText.Replace(encodedValue[i], normalChar[i]);
-                                    }
+                                for (int i = 0; i < encodedValue.Count; i++)
+                                {
+                                    if (textToDecode.Contains(encodedValue[i])) decodedText = decodedText.Replace(encodedValue[i], normalChar[i]);
+                                }
                                 Console.Clear();
                                 Console.WriteLine($"{textToDecode}has been encoded to:\n{decodedText}\n");
                                 Console.Write("Do you want to export it? (y/N): ");
@@ -418,7 +430,7 @@ Exit:
                     #endregion
                     #region "Load Codec"
                     case 3:
-                        if (EDLMED != ConsoleColor.DarkGray) codecPath = ChooseCodec();
+                        if (EDLMEDO != ConsoleColor.DarkGray) codecPath = ChooseCodec();
                         result = 0;
                         break;
                     #endregion
@@ -512,7 +524,7 @@ Exit:
                     #endregion
                     #region "Modify Codec"
                     case 5:
-                        if (EDLMED != ConsoleColor.DarkGray)
+                        if (EDLMEDO != ConsoleColor.DarkGray)
                         {
                             if (isCodecLoaded)
                             {
@@ -672,7 +684,7 @@ Exit:
                     #endregion
                     #region "Export Codec"
                     case 6:
-                        if (EDLMED != ConsoleColor.DarkGray)
+                        if (EDLMEDO != ConsoleColor.DarkGray)
                         {
                             string codec = ChooseCodec();
                             if (codec != string.Empty) ExportCodec(codec);
@@ -710,7 +722,7 @@ Exit:
                     #endregion
                     #region "Delete Codec"
                     case 8:
-                        if (EDLMED != ConsoleColor.DarkGray)
+                        if (EDLMEDO != ConsoleColor.DarkGray)
                         {
                             for (int i = 0; i < Console.WindowWidth / 2 - 4; i++) Console.Write(' ');
                             WriteWithColor("WARNING!", ConsoleColor.DarkRed, true);
@@ -725,6 +737,31 @@ Exit:
                         result = 0;
                         break;
                     #endregion:
+                    #region "Codec Overview"
+                    case 9:
+                        if (EDLMEDO != ConsoleColor.DarkGray)
+                        {
+                            if (isCodecLoaded)
+                            {
+                                SetupLists(out List<string> key, out List<string> value);
+                                for (int i = 0; i < key.Count; i++)
+                                {
+                                    WriteWithColor(key[i], ConsoleColor.Blue);
+                                    Console.Write(" => ");
+                                    WriteWithColor(value[i], ConsoleColor.Cyan, true);
+                                }
+                                Console.WriteLine("\nPress a key to close...");
+                                Console.ReadKey();
+                            }
+                            else
+                            {
+                                WriteWithColor("Select a codec first!", ConsoleColor.Yellow, true);
+                                Sleep(1500);
+                            }
+                        }
+                        result = 0;
+                        break;
+                    #endregion
                     default: result = 0; break;
                 }
             } while (result == 0);
