@@ -503,25 +503,35 @@ Exit:
                                 {
                                     string[] splittedString = subString.Split('-');
                                     if (splittedString[0] == splittedString[1]) { WriteWithColor($"The char({splittedString[0]}) and its encoded version({splittedString[1]}) are the same, skipping...", ConsoleColor.DarkYellow, true); continue; }
-                                    if (splittedString.Length == 2 && splittedString[0].Length == 1 && !subString.Contains(',') && !subString.Contains('\'')) //splittedString.Length ottiene il numero di sotto-stringhe in cui è stato divisa la variabile, se questo numero non è 2 vuol dire che è stato messo più di un trattino(tipo a-b-z) perchè con un solo trattino si ottengono solamente 2 sotto-stringhe
+                                    if (splittedString.Length == 2 && splittedString[0].Length == 1 && !subString.Contains(',') && !subString.Contains('\'')) //splittedString.Length ottiene il numero di sotto-stringhe in cui è stato divisa la variabile, se questo numero non è 2 vuol dire che è stato messo più di un trattino(tipo a-b-z) perché con un solo trattino si ottengono solamente 2 sotto-stringhe
                                     {
-                                        int charPosition = chars.IndexOf(splittedString[0]);
-                                        if (charPosition != -1) //check if char is already in the list
+                                        int encodedPosition = encodedChars.IndexOf(splittedString[1]);
+                                        if(encodedPosition == -1)
                                         {
-                                            WriteWithColor($"\"{splittedString[0]}\" already exists, it will be overwritten", ConsoleColor.Yellow, true);
+                                            int charPosition = chars.IndexOf(splittedString[0]);
+                                            if (charPosition != -1) //check if char is already in the list
+                                            {
+                                                WriteWithColor($"\"{splittedString[0]}\" already exists, it will be overwritten", ConsoleColor.Yellow, true);
 #if DEBUG
-                                            Debug.WriteLine($"\u26A0{splittedString[0]}({encodedChars[charPosition]} => {splittedString[1]})");
+                                                Debug.WriteLine($"\u26A0{splittedString[0]}({encodedChars[charPosition]} => {splittedString[1]})");
 #endif
-                                            encodedChars[charPosition] = splittedString[1];
+                                                encodedChars[charPosition] = splittedString[1];
+                                            }
+                                            else
+                                            {
+                                                chars.Add(splittedString[0]);
+                                                encodedChars.Add(splittedString[1]);
+#if DEBUG
+                                                Debug.WriteLine($"\u2795{subString}");
+#endif
+                                            }
                                         }
                                         else
                                         {
-                                            chars.Add(splittedString[0]);
-                                            encodedChars.Add(splittedString[1]);
-#if DEBUG
-                                            Debug.WriteLine($"\u2795{subString}");
-#endif
+                                            if (splittedString[0] == chars[encodedPosition]) WriteWithColor($"Nothing changed.. \"{chars[encodedPosition]}\" was already \"{splittedString[1]}\"", ConsoleColor.Yellow, true);
+                                            else WriteWithColor($"Ignored \"{splittedString[0]}\", \"{splittedString[1]}\" is already the encoding of \"{chars[encodedPosition]}\"", ConsoleColor.DarkYellow, true);
                                         }
+
                                     }
                                     else
                                     {
