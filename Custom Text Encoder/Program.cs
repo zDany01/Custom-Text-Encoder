@@ -1,10 +1,10 @@
-﻿using System;
+﻿using SimpleJSON;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using SimpleJSON;
 using System.Diagnostics;
 using static System.Threading.Thread;
 
@@ -240,9 +240,9 @@ namespace Custom_Text_Encoder
             }
             bool reoder = false;
             int maxlenght = values[0].Length;
-            for(int i = 0; i < values.Count; i++)
+            for (int i = 0; i < values.Count; i++)
             {
-                if(values[i].Length > maxlenght) reoder = true;
+                if (values[i].Length > maxlenght) reoder = true;
             }
 
             if (reoder)
@@ -481,7 +481,7 @@ Exit:
                         Console.Write(" where\n - ");
                         WriteWithColor('X', ConsoleColor.Yellow);
                         Console.Write(" is the character that you want to encode\n - ");
-                        WriteWithColor('Y', ConsoleColor.Green);
+                        WriteWithColor('Y', ConsoleColor.DarkGreen);
                         Console.Write(" is the encoded form of that character\nFor example if i want to encode all \"A\" to become \"z\", I'll write A-z\nThe program will accept input until you write ");
                         WriteWithColor("ABORT", ConsoleColor.Red);
                         Console.Write(" to abort or ");
@@ -502,12 +502,38 @@ Exit:
                                 foreach (string subString in line.Split(','))
                                 {
                                     string[] splittedString = subString.Split('-');
-                                    if (splittedString[0] == splittedString[1]) { WriteWithColor($"The char({splittedString[0]}) and its encoded version({splittedString[1]}) are the same, skipping...", ConsoleColor.DarkYellow, true); continue; }
+                                    if (splittedString[0] == splittedString[1])
+                                    {
+                                        WriteWithColor($"The char(", ConsoleColor.DarkYellow);
+                                        WriteWithColor(splittedString[0], ConsoleColor.Yellow);
+                                        WriteWithColor(") and its encoded version(", ConsoleColor.DarkYellow);
+                                        WriteWithColor(splittedString[1], ConsoleColor.DarkGreen);
+                                        WriteWithColor(") are the same, skipping...", ConsoleColor.DarkYellow);
+                                        continue;
+                                    }
                                     if (splittedString.Length == 2 && splittedString[0].Length == 1 && !subString.Contains(',') && !subString.Contains('\'')) //splittedString.Length ottiene il numero di sotto-stringhe in cui è stato divisa la variabile, se questo numero non è 2 vuol dire che è stato messo più di un trattino(tipo a-b-z) perché con un solo trattino si ottengono solamente 2 sotto-stringhe
                                     {
                                         int encodedPosition = encodedChars.IndexOf(splittedString[1]);
-                                        if(encodedPosition == -1)
+                                        if (encodedPosition == -1)
                                         {
+
+                                            for (int i = 0; i < encodedChars.Count; i++)
+                                            {
+                                                for (int j = 0; j < encodedChars.Count; j++)
+                                                {
+                                                    if (encodedChars[i] + encodedChars[j] == splittedString[1])
+                                                    {
+                                                        WriteWithColor("Cannot accept ", ConsoleColor.DarkYellow);
+                                                        WriteWithColor($"\"{splittedString[1]}\"", ConsoleColor.DarkGreen);
+                                                        WriteWithColor(" as an encoding for ", ConsoleColor.DarkYellow);
+                                                        WriteWithColor($"\"{splittedString[0]}\"", ConsoleColor.Yellow);
+                                                        WriteWithColor(" because it's already used for encoding ", ConsoleColor.DarkYellow);
+                                                        WriteWithColor($"\"{chars[i]}{chars[j]}\"", ConsoleColor.Yellow, true);
+                                                        goto continueForEach;
+                                                    }
+                                                }
+                                            }
+
                                             int charPosition = chars.IndexOf(splittedString[0]);
                                             if (charPosition != -1) //check if char is already in the list
                                             {
@@ -528,8 +554,20 @@ Exit:
                                         }
                                         else
                                         {
-                                            if (splittedString[0] == chars[encodedPosition]) WriteWithColor($"Nothing changed.. \"{chars[encodedPosition]}\" was already \"{splittedString[1]}\"", ConsoleColor.Yellow, true);
-                                            else WriteWithColor($"Ignored \"{splittedString[0]}\", \"{splittedString[1]}\" is already the encoding of \"{chars[encodedPosition]}\"", ConsoleColor.DarkYellow, true);
+                                            if (splittedString[0] == chars[encodedPosition])
+                                            {
+                                                WriteWithColor($"Nothing changed.. \"{chars[encodedPosition]}\" was already ", ConsoleColor.Yellow);
+                                                WriteWithColor($"\"{splittedString[1]}\"", ConsoleColor.DarkGreen, true);
+                                            }
+                                            else
+                                            {
+                                                WriteWithColor($"Ignored ", ConsoleColor.DarkYellow);
+                                                WriteWithColor($"\"{splittedString[0]}\"", ConsoleColor.Yellow);
+                                                WriteWithColor(", ", ConsoleColor.DarkYellow);
+                                                WriteWithColor($"\"{splittedString[1]}\"", ConsoleColor.DarkGreen);
+                                                WriteWithColor(" is already the encoding of ", ConsoleColor.DarkYellow);
+                                                WriteWithColor($"\"{chars[encodedPosition]}\"", ConsoleColor.Yellow, true);
+                                            }
                                         }
 
                                     }
@@ -537,6 +575,8 @@ Exit:
                                     {
                                         WriteWithColor($"Ignored {subString}, incorrect text formatting", ConsoleColor.DarkYellow, true);
                                     }
+continueForEach:
+                                    continue;
                                 }
                             }
                             else
@@ -590,7 +630,7 @@ Exit:
                                     Console.Write(" where\n - ");
                                     WriteWithColor('X', ConsoleColor.Yellow);
                                     Console.Write(" is the character that you want to modify or add\n - ");
-                                    WriteWithColor('Y', ConsoleColor.Green);
+                                    WriteWithColor('Y', ConsoleColor.DarkGreen);
                                     Console.Write(" is the encoded or modified version of that character\nFor example if i want to modify all \"z\" to become \"A\", I'll write z-A\nFor deleting an existing character, you will need to type ");
                                     WriteWithColor("DELETE ", ConsoleColor.DarkRed);
                                     WriteWithColor('X', ConsoleColor.Yellow);
