@@ -12,10 +12,10 @@ namespace Custom_Text_Encoder
 {
     internal class Program
     {
-        static string codecPath = "";
-        static bool isCodecLoaded;
-        static ConsoleColor EDLMEDO = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
-        static string CodecName
+        static private string codecPath = "";
+        static private bool isCodecLoaded;
+        static private ConsoleColor EDLMEDO = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
+        static private string CodecName
         {
             get
             {
@@ -24,7 +24,7 @@ namespace Custom_Text_Encoder
             }
         }
 
-        static void WriteWithColor<T>(T value, ConsoleColor color, bool endLine = false)
+        static private void WriteWithColor<T>(T value, ConsoleColor color, bool endLine = false)
         {
             ConsoleColor oldColor = Console.ForegroundColor;
             Console.ForegroundColor = color;
@@ -39,7 +39,7 @@ namespace Custom_Text_Encoder
             Console.ForegroundColor = oldColor;
         }
 
-        static string RemoveIllegalChar(string text)
+        static private string RemoveIllegalChar(string text)
         {
             foreach (char Char in Path.GetInvalidFileNameChars())
             {
@@ -48,7 +48,7 @@ namespace Custom_Text_Encoder
             return text;
         }
 
-        static bool CheckCodec(string filePath)
+        static private bool CheckCodec(string filePath)
         {
             EDLMEDO = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
             Console.Write("Codec status: ");
@@ -64,7 +64,7 @@ namespace Custom_Text_Encoder
             return false;
         }
 
-        static void SetupLists(out List<string> key, out List<string> value)
+        static private void SetupLists(out List<string> key, out List<string> value)
         {
             JSONNode json = JSONNode.Parse(File.ReadAllText(codecPath));
             key = new List<string>();
@@ -76,7 +76,7 @@ namespace Custom_Text_Encoder
             }
         }
 
-        static void CreateJSONCodec(string filePath, List<string> chars, List<string> encodedChars)
+        static private void CreateJSONCodec(string filePath, List<string> chars, List<string> encodedChars)
         {
             JSONNode file = new JSONObject();
             for (int i = 0; i < chars.Count; i++)
@@ -86,7 +86,7 @@ namespace Custom_Text_Encoder
             File.WriteAllText(filePath, file.AsObject.ToString(0)); //Questo ToString() non è quello di Microsoft, è una funzione stessa della libreria SimpleJSON, il numero indica se usare la formattazione(mantenere gli spazi)
         }
 
-        static void ExportCodec(string codec)
+        static private void ExportCodec(string codec)
         {
             string reply, newExportedFilePath, exportedMessage = newExportedFilePath = string.Empty;
             do
@@ -146,7 +146,7 @@ namespace Custom_Text_Encoder
             Sleep(1000);
         }
 
-        static void ExportFile(string fileContents)
+        static private void ExportFile(string fileContents)
         {
             string reply, newExportedFilePath, exportedMessage = newExportedFilePath = string.Empty;
             do
@@ -206,7 +206,7 @@ namespace Custom_Text_Encoder
             Sleep(1000);
         }
 
-        static bool IsValidCodec(string filePath, bool writeInvalid = false)
+        static private bool IsValidCodec(string filePath, bool writeInvalid = false)
         {
             if (!File.Exists(filePath))
             {
@@ -279,7 +279,7 @@ namespace Custom_Text_Encoder
             return true;
         }
 
-        static string ChooseCodec(bool onlyCheck = false)
+        static private string ChooseCodec(bool onlyCheck = false)
         {
             List<string> codecs = new List<string>();
             foreach (string filePath in Directory.GetFiles(Environment.CurrentDirectory))
@@ -317,7 +317,7 @@ Exit:
             return string.Empty;
         }
 
-        static string RequestFile()
+        static private string RequestFile()
         {
             while (true)
             {
@@ -337,7 +337,7 @@ Exit:
             }
         }
 
-        static bool FileOrTextInput(string keywordToStop, out string textTo, out List<string> key, out List<string> value)
+        static private bool FileOrTextInput(string keywordToStop, out string textTo, out List<string> key, out List<string> value)
         {
             SetupLists(out key, out value);
             textTo = string.Empty;
@@ -374,7 +374,7 @@ Exit:
             else return true;
         }
 
-        static void OrderLists(ref List<string> key, ref List<string> value)
+        static private void OrderLists(ref List<string> key, ref List<string> value)
         {
             List<string> orderedValue = value.OrderBy(element => element.Length).ToList();
             orderedValue.Reverse();
@@ -387,7 +387,7 @@ Exit:
             value = orderedValue;
         }
 
-        static void CodecOverview(List<string> key = null, List<string> value = null)
+        static private void CodecOverview(List<string> key = null, List<string> value = null)
         {
             if (key is null) SetupLists(out key, out value);
             if (key.Count > 0)
@@ -405,7 +405,7 @@ Exit:
             }
         }
 
-        static void CodecEditor(bool modifyCodec)
+        static private void CodecEditor(bool modifyCodec)
         {
             string line;
             List<string> codecChars, encodedChars;
@@ -485,13 +485,13 @@ Exit:
                             foreach (string subString in line.Split(','))
                             {
                                 string[] splittedString = subString.Split('-');
-                                if (splittedString[0] == splittedString[1])
-                                {
-                                    WriteWithColor($"Ignored {splittedString[0]} => {splittedString[1]}, the char and its encoded version are the same", ConsoleColor.DarkYellow, true);
-                                    continue;
-                                }
                                 if (splittedString.Length == 2 && splittedString[0].Length == 1 && !subString.Contains(',') && !subString.Contains('\'')) //splittedString.Length ottiene il numero di sotto-stringhe in cui è stato divisa la variabile, se questo numero non è 2 vuol dire che è stato messo più di un trattino(tipo a-b-z) perché con un solo trattino si ottengono solamente 2 sotto-stringhe
                                 {
+                                    if (splittedString[0] == splittedString[1])
+                                    {
+                                        WriteWithColor($"Ignored {splittedString[0]} => {splittedString[1]}, the char and its encoded version are the same", ConsoleColor.DarkYellow, true);
+                                        continue;
+                                    }
                                     int encodedPosition = encodedChars.IndexOf(splittedString[1]);
                                     if (encodedPosition == -1)
                                     {
@@ -591,7 +591,7 @@ continueForEach:
                                         if (Console.ReadLine().ToUpper() == "N") goto default;
                                     }
                                 }
-                                OrderLists(ref codecChars,ref encodedChars);
+                                OrderLists(ref codecChars, ref encodedChars);
                                 CreateJSONCodec(filePath, codecChars, encodedChars);
 
                                 Console.Write("\nFile modified successfully, do you want to load it? (Y/n): ");
@@ -619,12 +619,12 @@ continueForEach:
                 WriteWithColor("5. Modify Encoding Format\n6. Export Codec", EDLMEDO, true);
                 Console.WriteLine("7. Import Codec");
                 WriteWithColor("8. Delete Codec\n9. Codec Overview", EDLMEDO, true);
-                Console.WriteLine("0. Exit");
-                Console.Write("\nChoose an option: ");
-                int.TryParse(Console.ReadLine(), out result);
+                Console.Write("\nChoose an option or Type 0 to Exit: ");
+                if (!int.TryParse(Console.ReadLine(), out result)) result = -1;
                 Console.Clear();
                 switch (result)
                 {
+                    #region "Exit"
                     case 0:
                         Console.Clear();
                         WriteWithColor("Goodbye :)", ConsoleColor.Green);
@@ -635,6 +635,7 @@ continueForEach:
                         Sleep(300);
                         Environment.Exit(0);
                         break;
+                    #endregion
                     #region "Encode"
                     case 1:
                         if (EDLMEDO != ConsoleColor.DarkGray)
@@ -674,7 +675,7 @@ continueForEach:
                                 Sleep(1500);
                             }
                         }
-                        result = 0;
+                        result = -1;
                         break;
                     #endregion
                     #region "Decode"
@@ -700,19 +701,19 @@ continueForEach:
                                 Sleep(1500);
                             }
                         }
-                        result = 0;
+                        result = -1;
                         break;
                     #endregion
                     #region "Load Codec"
                     case 3:
                         if (EDLMEDO != ConsoleColor.DarkGray) codecPath = ChooseCodec();
-                        result = 0;
+                        result = -1;
                         break;
                     #endregion
                     #region "Create Codec"
                     case 4:
                         CodecEditor(false);
-                        result = 0;
+                        result = -1;
                         break;
                     #endregion
                     #region "Modify Codec"
@@ -730,7 +731,7 @@ continueForEach:
                             }
 
                         }
-                        result = 0;
+                        result = -1;
                         break;
                     #endregion
                     #region "Export Codec"
@@ -740,7 +741,7 @@ continueForEach:
                             string codec = ChooseCodec();
                             if (codec != string.Empty) ExportCodec(codec);
                         }
-                        result = 0;
+                        result = -1;
                         break;
                     #endregion
                     #region "Import Codec"
@@ -764,10 +765,10 @@ continueForEach:
                             if (Console.ReadLine().ToUpper() == "N") goto default;
                         }
                         File.Copy(importFilePath, newFilePath, true);
-                        WriteWithColor($"\nSuccessfully imported {codecName}", ConsoleColor.Green, true);
+                        WriteWithColor($"Successfully imported {codecName}", ConsoleColor.Green, true);
                         Console.Write("Do you want to load it? (y/N): ");
                         if (Console.ReadLine().ToUpper() == "Y") codecPath = codecName + ".json";
-                        result = 0;
+                        result = -1;
                         break;
                     #endregion
                     #region "Delete Codec"
@@ -784,7 +785,7 @@ continueForEach:
                             string codec_8 = ChooseCodec();
                             if (codec_8 != string.Empty) File.Delete(codec_8);
                         }
-                        result = 0;
+                        result = -1;
                         break;
                     #endregion:
                     #region "Codec Overview"
@@ -805,12 +806,12 @@ continueForEach:
                                 Sleep(1500);
                             }
                         }
-                        result = 0;
+                        result = -1;
                         break;
                     #endregion
-                    default: result = 0; break;
+                    default: result = -1; break;
                 }
-            } while (result == 0);
+            } while (result == -1);
         }
     }
 }
