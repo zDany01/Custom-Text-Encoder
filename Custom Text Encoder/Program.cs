@@ -15,7 +15,14 @@ namespace Custom_Text_Encoder
         static string codecPath = "";
         static bool isCodecLoaded;
         static ConsoleColor EDLMEDO = Convert.ToBoolean(ChooseCodec(true)) ? Console.ForegroundColor : ConsoleColor.DarkGray;
-
+        static string CodecName
+        {
+            get
+            {
+                if (IsValidCodec(codecPath)) return codecPath.Replace(Environment.CurrentDirectory, null).Remove(codecPath.Length - 5, 5);
+                else throw new InvalidOperationException("Unable to get the codec name, check if a codec is loaded before calling the codecName");
+            }
+        }
 
         static void WriteWithColor<T>(T value, ConsoleColor color, bool endLine = false)
         {
@@ -380,6 +387,24 @@ Exit:
             value = orderedValue;
         }
 
+        static void CodecOverview(List<string> key = null, List<string> value = null)
+        {
+            if (key is null) SetupLists(out key, out value);
+            if (key.Count > 0)
+            {
+                for (int i = 0; i < key.Count; i++)
+                {
+                    WriteWithColor(key[i], ConsoleColor.Blue);
+                    Console.Write(" => ");
+                    WriteWithColor(value[i], ConsoleColor.Cyan, true);
+                }
+            }
+            else
+            {
+                WriteWithColor("The codec is empty, please add something first!", ConsoleColor.DarkYellow, true);
+            }
+        }
+
         static void CodecEditor(bool modifyCodec)
         {
             string line;
@@ -396,18 +421,18 @@ Exit:
                 restartModify = false;
                 Console.Clear();
                 Console.Write("Hi, to create or modify an encoding format you need to follow these rules:\nThe text format must be the following: ");
-                WriteWithColor('X', ConsoleColor.Yellow);
+                WriteWithColor('X', ConsoleColor.Blue);
                 Console.Write('-');
-                WriteWithColor("YYY", ConsoleColor.DarkGreen);
+                WriteWithColor("YYY", ConsoleColor.Cyan);
                 Console.Write(" where\n - ");
-                WriteWithColor('X', ConsoleColor.Yellow);
+                WriteWithColor('X', ConsoleColor.Blue);
                 Console.Write(" is the character that you want to modify or add\n - ");
-                WriteWithColor('Y', ConsoleColor.DarkGreen);
+                WriteWithColor('Y', ConsoleColor.Cyan);
                 Console.Write(" is the encoded or modified version of that character\nFor example if i want to encode all \"z\" to become \"A\", I'll write z-A\nFor deleting an existing character, you will need to type ");
                 WriteWithColor("DELETE ", ConsoleColor.DarkRed);
-                WriteWithColor('X', ConsoleColor.Yellow);
+                WriteWithColor('X', ConsoleColor.Blue);
                 Console.Write(" where ");
-                WriteWithColor('X', ConsoleColor.Yellow);
+                WriteWithColor('X', ConsoleColor.Blue);
                 Console.Write(" is the character\nTo see which characters are already present type ");
                 WriteWithColor("LIST", ConsoleColor.Magenta, true);
                 Console.Write("The program will accept input until you write ");
@@ -424,12 +449,7 @@ Exit:
                     if (line.Contains("ABORT") || line.Contains("SAVE")) break;
                     else if (line == "LIST")
                     {
-                        for (int i = 0; i < codecChars.Count; i++)
-                        {
-                            WriteWithColor(codecChars[i], ConsoleColor.Blue);
-                            Console.Write(" => ");
-                            WriteWithColor(encodedChars[i], ConsoleColor.Cyan, true);
-                        }
+                        CodecOverview(codecChars, encodedChars);
                         continue;
                     }
                     else if (line.Contains("DELETE"))
@@ -467,11 +487,7 @@ Exit:
                                 string[] splittedString = subString.Split('-');
                                 if (splittedString[0] == splittedString[1])
                                 {
-                                    WriteWithColor($"The char(", ConsoleColor.DarkYellow);
-                                    WriteWithColor(splittedString[0], ConsoleColor.Yellow);
-                                    WriteWithColor(") and its encoded version(", ConsoleColor.DarkYellow);
-                                    WriteWithColor(splittedString[1], ConsoleColor.DarkGreen);
-                                    WriteWithColor(") are the same, skipping...", ConsoleColor.DarkYellow);
+                                    WriteWithColor($"Ignored {splittedString[0]} => {splittedString[1]}, the char and its encoded version are the same", ConsoleColor.DarkYellow, true);
                                     continue;
                                 }
                                 if (splittedString.Length == 2 && splittedString[0].Length == 1 && !subString.Contains(',') && !subString.Contains('\'')) //splittedString.Length ottiene il numero di sotto-stringhe in cui è stato divisa la variabile, se questo numero non è 2 vuol dire che è stato messo più di un trattino(tipo a-b-z) perché con un solo trattino si ottengono solamente 2 sotto-stringhe
@@ -486,12 +502,10 @@ Exit:
                                             {
                                                 if (encodedChars[i] + encodedChars[j] == splittedString[1])
                                                 {
-                                                    WriteWithColor("Cannot accept ", ConsoleColor.DarkYellow);
-                                                    WriteWithColor($"\"{splittedString[1]}\"", ConsoleColor.DarkGreen);
-                                                    WriteWithColor(" as an encoding for ", ConsoleColor.DarkYellow);
-                                                    WriteWithColor($"\"{splittedString[0]}\"", ConsoleColor.Yellow);
+                                                    WriteWithColor($"Cannot accept \"{splittedString[1]}\" as an encoding for ", ConsoleColor.DarkYellow);
+                                                    WriteWithColor($"\"{splittedString[0]}\"", ConsoleColor.Blue);
                                                     WriteWithColor(" because it's already used for encoding ", ConsoleColor.DarkYellow);
-                                                    WriteWithColor($"\"{codecChars[i]}{codecChars[j]}\"", ConsoleColor.Yellow, true);
+                                                    WriteWithColor($"\"{codecChars[i]}{codecChars[j]}\"", ConsoleColor.Blue, true);
                                                     goto continueForEach;
                                                 }
                                             }
@@ -503,7 +517,7 @@ Exit:
 #if DEBUG
                                             Debug.WriteLine($"\u26A0{splittedString[0]}({encodedChars[charPosition]} => {splittedString[1]})");
 #endif
-                                            WriteWithColor($"{splittedString[0]} has been modified ({encodedChars[charPosition]} => {splittedString[1]})", ConsoleColor.Cyan, true);
+                                            WriteWithColor($"{splittedString[0]} has been modified ({encodedChars[charPosition]} => {splittedString[1]})", ConsoleColor.DarkYellow, true);
                                             encodedChars[charPosition] = splittedString[1];
                                         }
                                         else
@@ -519,17 +533,17 @@ Exit:
                                     {
                                         if (splittedString[0] == codecChars[encodedPosition])
                                         {
-                                            WriteWithColor($"Nothing changed.. \"{codecChars[encodedPosition]}\" was already ", ConsoleColor.Yellow);
-                                            WriteWithColor($"\"{splittedString[1]}\"", ConsoleColor.DarkGreen, true);
+                                            WriteWithColor($"Nothing changed.. ", ConsoleColor.DarkYellow);
+                                            WriteWithColor($"\"{codecChars[encodedPosition]}\"", ConsoleColor.Blue);
+                                            WriteWithColor(" was already ", ConsoleColor.DarkYellow);
+                                            WriteWithColor($"\"{splittedString[1]}\"", ConsoleColor.Cyan, true);
                                         }
                                         else
                                         {
-                                            WriteWithColor($"Ignored ", ConsoleColor.DarkYellow);
-                                            WriteWithColor($"\"{splittedString[0]}\"", ConsoleColor.Yellow);
-                                            WriteWithColor(", ", ConsoleColor.DarkYellow);
-                                            WriteWithColor($"\"{splittedString[1]}\"", ConsoleColor.DarkGreen);
+                                            WriteWithColor($"Ignored \"{splittedString[0]}\", ", ConsoleColor.DarkYellow);
+                                            WriteWithColor($"\"{splittedString[1]}\"", ConsoleColor.Cyan);
                                             WriteWithColor(" is already the encoding of ", ConsoleColor.DarkYellow);
-                                            WriteWithColor($"\"{codecChars[encodedPosition]}\"", ConsoleColor.Yellow, true);
+                                            WriteWithColor($"\"{codecChars[encodedPosition]}\"", ConsoleColor.Blue, true);
                                         }
                                     }
                                 }
@@ -557,12 +571,7 @@ continueForEach:
                         redo = false;
                         Console.Clear();
                         Console.WriteLine("Codec overview: ");
-                        for (int i = 0; i < codecChars.Count; i++)
-                        {
-                            WriteWithColor(codecChars[i], ConsoleColor.Blue);
-                            Console.Write(" => ");
-                            WriteWithColor(encodedChars[i], ConsoleColor.Cyan, true);
-                        }
+                        CodecOverview(codecChars, encodedChars);
                         Console.Write("What do you want to do?:\n1. Save\n2. Continue Modify \n3. Abort\nChoose: ");
                         int.TryParse(Console.ReadLine(), out int reply);
                         switch (reply)
@@ -582,6 +591,7 @@ continueForEach:
                                         if (Console.ReadLine().ToUpper() == "N") goto default;
                                     }
                                 }
+                                OrderLists(ref codecChars,ref encodedChars);
                                 CreateJSONCodec(filePath, codecChars, encodedChars);
 
                                 Console.Write("\nFile modified successfully, do you want to load it? (Y/n): ");
@@ -595,6 +605,7 @@ continueForEach:
                 }
             } while (restartModify);
         }
+
         static void Main()
         {
             int result;
@@ -608,11 +619,22 @@ continueForEach:
                 WriteWithColor("5. Modify Encoding Format\n6. Export Codec", EDLMEDO, true);
                 Console.WriteLine("7. Import Codec");
                 WriteWithColor("8. Delete Codec\n9. Codec Overview", EDLMEDO, true);
+                Console.WriteLine("0. Exit");
                 Console.Write("\nChoose an option: ");
                 int.TryParse(Console.ReadLine(), out result);
                 Console.Clear();
                 switch (result)
                 {
+                    case 0:
+                        Console.Clear();
+                        WriteWithColor("Goodbye :)", ConsoleColor.Green);
+                        Sleep(500);
+                        WriteWithColor("\rGoodbye :)", ConsoleColor.Blue);
+                        Sleep(500);
+                        WriteWithColor("\rGoodbye :)", ConsoleColor.Red);
+                        Sleep(300);
+                        Environment.Exit(0);
+                        break;
                     #region "Encode"
                     case 1:
                         if (EDLMEDO != ConsoleColor.DarkGray)
@@ -723,14 +745,13 @@ continueForEach:
                     #endregion
                     #region "Import Codec"
                     case 7:
-                        string codecName = "If you see me, there is a bug the program :/\n If you are an user, please open a report on GitHub https://github.com/zDany01/Custom-Text-Encoder/issues"; //:)
                         string importFilePath;
                         do
                         {
                             importFilePath = RequestFile();
                             if (importFilePath == bool.FalseString) goto default;
                         } while (!IsValidCodec(importFilePath, true));
-                        codecName = Path.GetFileNameWithoutExtension(importFilePath);
+                        string codecName = Path.GetFileNameWithoutExtension(importFilePath);
                         Console.Clear();
                         string newFilePath = $"{Environment.CurrentDirectory}\\{codecName}.json";
                         if (File.Exists(newFilePath))
@@ -772,13 +793,9 @@ continueForEach:
                         {
                             if (isCodecLoaded)
                             {
-                                SetupLists(out List<string> key, out List<string> value);
-                                for (int i = 0; i < key.Count; i++)
-                                {
-                                    WriteWithColor(key[i], ConsoleColor.Blue);
-                                    Console.Write(" => ");
-                                    WriteWithColor(value[i], ConsoleColor.Cyan, true);
-                                }
+                                WriteWithColor(CodecName, ConsoleColor.DarkCyan);
+                                Console.WriteLine($" Codec Overview:\n");
+                                CodecOverview();
                                 Console.WriteLine("\nPress a key to close...");
                                 Console.ReadKey();
                             }
