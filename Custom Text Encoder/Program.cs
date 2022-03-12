@@ -88,7 +88,8 @@ namespace Custom_Text_Encoder
 
         static private void ExportCodec(string codec)
         {
-            string reply, newExportedFilePath, exportedMessage = newExportedFilePath = string.Empty;
+            string reply, newExportedFilePath, exportedMessage;
+            exportedMessage = newExportedFilePath = string.Empty;
             do
             {
                 Console.Clear();
@@ -337,35 +338,35 @@ Exit:
             }
         }
 
-        static private bool FileOrTextInput(string keywordToStop, out string textTo, out List<string> key, out List<string> value)
+        static private bool GetInput(string keywordToStop, out string outputText)
         {
-            SetupLists(out key, out value);
-            textTo = string.Empty;
-            Console.Write("Do you want to import text from a file? (y/N): ");
-            if (Console.ReadLine().ToUpper() == "Y")
+            Console.Clear();
+            Console.Write("Type here the text that you want to encode, the program will accept user input until you write ");
+            WriteWithColor($"{keywordToStop}", ConsoleColor.Green);
+            Console.Write(" or ");
+            WriteWithColor("ABORT", ConsoleColor.Red, true);
+            Console.Write("You can also import text from files by typing ");
+            WriteWithColor("IMPORT\n", ConsoleColor.DarkBlue, true);
+            string line;
+            outputText = string.Empty;
+            do
+            {
+                line = Console.ReadLine();
+                outputText += line + Environment.NewLine;
+            } while (line != keywordToStop && line != "ABORT" && line != "IMPORT");
+
+            if (line == "IMPORT")
             {
                 Console.Clear();
                 string filePath = RequestFile();
                 if (filePath == bool.FalseString) return false;
-                textTo = File.ReadAllText(filePath);
+                outputText = File.ReadAllText(filePath);
             }
-            else
-            {
-                Console.Clear();
-                Console.Write("Type here the text that you want to encode, the program will accept user input until you write ");
-                WriteWithColor($"{keywordToStop}", ConsoleColor.Green);
-                Console.Write(" or ");
-                WriteWithColor("ABORT\n", ConsoleColor.Red, true);
-                string line;
-                do
-                {
-                    line = Console.ReadLine();
-                    textTo += line + Environment.NewLine;
-                } while (line != keywordToStop && line != "ABORT");
-                if (line == "ABORT") return false;
-                textTo = textTo.Remove(textTo.Length - 8, 8); //remove ENCODE and NewLine from string
-            }
-            if (textTo.Length == 0)
+            else if (line == keywordToStop) outputText = outputText.Remove(outputText.Length - 8, 8); //remove ENCODE and NewLine from string
+            else return false;
+
+
+            if (outputText.Length == 0)
             {
                 WriteWithColor("You cannot encode the \"nothing\"", ConsoleColor.DarkYellow, true);
                 Sleep(1500);
@@ -642,9 +643,11 @@ continueForEach:
                         {
                             if (isCodecLoaded)
                             {
-                                if (!FileOrTextInput("ENCODE", out string textToEncode, out List<string> normalChar, out List<string> encodedValue)) goto default;
+                                if (!GetInput("ENCODE", out string textToEncode)) goto default;
 
+                                SetupLists(out List<string> normalChar, out List<string> encodedValue);
                                 List<string> stringChars = new List<string>();
+
                                 foreach (char c in textToEncode)
                                 {
                                     stringChars.Add(c.ToString());
@@ -684,8 +687,11 @@ continueForEach:
                         {
                             if (isCodecLoaded)
                             {
-                                if (!FileOrTextInput("DECODE", out string textToDecode, out List<string> normalChar, out List<string> encodedValue)) goto default;
+                                if (!GetInput("DECODE", out string textToDecode)) goto default;
                                 string decodedText = textToDecode;
+
+                                SetupLists(out List<string> normalChar, out List<string> encodedValue);
+
                                 for (int i = 0; i < encodedValue.Count; i++)
                                 {
                                     if (textToDecode.Contains(encodedValue[i])) decodedText = decodedText.Replace(encodedValue[i], normalChar[i]);
