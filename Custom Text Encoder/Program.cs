@@ -182,9 +182,10 @@ namespace Custom_Text_Encoder
                         break;
                     default: reply = "Why do you want to restart this?"; break;
                 }
-            } while (reply == "Why do you want to restart this?");
+            } while (reply == "Why do you want to restart this?"); // :)
             Console.Write("Insert filename: ");
-            newExportedFilePath += "\\" + RemoveIllegalChar(Console.ReadLine() + ".txt");
+            newExportedFilePath += "\\" + RemoveIllegalChar(Console.ReadLine());
+            if (!newExportedFilePath.EndsWith(".txt")) newExportedFilePath += ".txt";
             if (File.Exists(newExportedFilePath))
             {
                 Console.Write("Seems like you've already exported this. Do you want to overwrite the file? (Y/n): ");
@@ -493,6 +494,7 @@ Exit:
                                         WriteWithColor($"Ignored {splittedString[0]} => {splittedString[1]}, the char and its encoded version are the same", ConsoleColor.DarkYellow, true);
                                         continue;
                                     }
+
                                     int encodedPosition = encodedChars.IndexOf(splittedString[1]);
                                     if (encodedPosition == -1)
                                     {
@@ -507,6 +509,26 @@ Exit:
                                                     WriteWithColor($"\"{splittedString[0]}\"", ConsoleColor.Blue);
                                                     WriteWithColor(" because it's already used for encoding ", ConsoleColor.DarkYellow);
                                                     WriteWithColor($"\"{codecChars[i]}{codecChars[j]}\"", ConsoleColor.Blue, true);
+                                                    goto continueForEach;
+                                                }
+                                                else if (splittedString[1] + encodedChars[j] == encodedChars[i])
+                                                {
+                                                    WriteWithColor($"Cannot accept \"{splittedString[1]}\" as an encoding for ", ConsoleColor.DarkYellow);
+                                                    WriteWithColor($"\"{splittedString[0]}\"", ConsoleColor.Blue);
+                                                    WriteWithColor(" because there would be an ambiguity between ", ConsoleColor.DarkYellow);
+                                                    WriteWithColor($"\"{codecChars[i]}\"", ConsoleColor.Blue);
+                                                    WriteWithColor(" and ", ConsoleColor.DarkYellow);
+                                                    WriteWithColor($"\"{splittedString[0]}{codecChars[j]}\"", ConsoleColor.Blue, true);
+                                                    goto continueForEach;
+                                                }
+                                                else if (encodedChars[j] + splittedString[1] == encodedChars[i])
+                                                {
+                                                    WriteWithColor($"Cannot accept \"{splittedString[1]}\" as an encoding for ", ConsoleColor.DarkYellow);
+                                                    WriteWithColor($"\"{splittedString[0]}\"", ConsoleColor.Blue);
+                                                    WriteWithColor(" because there would be an ambiguity between ", ConsoleColor.DarkYellow);
+                                                    WriteWithColor($"\"{codecChars[i]}\"", ConsoleColor.Blue);
+                                                    WriteWithColor(" and ", ConsoleColor.DarkYellow);
+                                                    WriteWithColor($"\"{codecChars[j]}{splittedString[0]}\"", ConsoleColor.Blue, true);
                                                     goto continueForEach;
                                                 }
                                             }
@@ -662,10 +684,7 @@ continueForEach:
                                     }
                                 }
                                 string encodedText = string.Empty;
-                                foreach (string stringChar in stringChars)
-                                {
-                                    encodedText += stringChar;
-                                }
+                                stringChars.ForEach(_char => encodedText += _char);
                                 Console.Clear();
                                 if (!textToEncode.EndsWith("\n")) textToEncode += '\n';
                                 Console.WriteLine($"{textToEncode}has been encoded to:\n{encodedText}\n");
@@ -688,14 +707,55 @@ continueForEach:
                             if (isCodecLoaded)
                             {
                                 if (!GetInput("DECODE", out string textToDecode)) goto default;
-                                string decodedText = textToDecode;
 
                                 SetupLists(out List<string> normalChar, out List<string> encodedValue);
+                                char[] charsToDecode = textToDecode.ToCharArray();
+                                int maxEncodedValueLenght = encodedValue[0].Length;
+                                List<string> decodedChars = new List<string>();
 
-                                for (int i = 0; i < encodedValue.Count; i++)
+                                int skipForXTimes = 0;
+                                for (int i = 0; i < charsToDecode.Length; i++)
                                 {
-                                    if (textToDecode.Contains(encodedValue[i])) decodedText = decodedText.Replace(encodedValue[i], normalChar[i]);
+                                    if (skipForXTimes > 0)
+                                    {
+                                        skipForXTimes--;
+                                        continue;
+                                    }
+
+                                    bool repeat = true;
+
+                                    int remainingSpace = charsToDecode.Length - i;
+                                    int maxCheck = (remainingSpace < maxEncodedValueLenght) ? remainingSpace : maxEncodedValueLenght; //to avoid adding non-existing chars to $charsToCheck
+
+                                    while (repeat)
+                                    {
+                                        if (maxCheck == 0) //decode for value doesn't exist
+                                        {
+                                            decodedChars.Add(charsToDecode[i].ToString());
+                                            break;
+                                        }
+
+                                        string charsToCheck = "";
+                                        for (int c = 0; c < maxCheck; c++)
+                                        {
+                                            charsToCheck += charsToDecode[i + c];
+                                        }
+
+                                        int decodedIndex = encodedValue.IndexOf(charsToCheck);
+                                        if (decodedIndex != -1)
+                                        {
+                                            decodedChars.Add(normalChar[decodedIndex]);
+                                            repeat = false;
+                                            skipForXTimes = maxCheck - 1;
+                                        }
+                                        else
+                                        {
+                                            if (maxCheck > 0) maxCheck--;
+                                        }
+                                    }
                                 }
+                                string decodedText = string.Empty;
+                                decodedChars.ForEach(decodedchar => decodedText += decodedchar);
                                 Console.Clear();
                                 Console.WriteLine($"{textToDecode}has been encoded to:\n{decodedText}\n");
                                 Console.Write("Do you want to export it? (y/N): ");
